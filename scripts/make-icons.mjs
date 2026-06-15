@@ -4,6 +4,7 @@
  *   assets/icon.png        (32×32, 트레이용)
  *   assets/icon-256.png    (256×256, 앱 아이콘용)
  *   assets/icon.ico        (16/32/48/256 멀티사이즈 ICO, EXE 아이콘)
+ *   assets/icon.icns       (macOS 앱 아이콘)
  */
 
 import { createRequire } from 'module';
@@ -95,3 +96,40 @@ for (let i = 0; i < count; i++) {
 
 writeFileSync(join(ROOT, 'assets', 'icon.ico'), ico);
 console.log('✓ assets/icon.ico (16/32/48/256px multi-size)');
+
+// --- 4. ICNS 생성 (macOS 앱 아이콘) ---
+// ICNS는 PNG payload를 담는 icon family 컨테이너다. Electron Builder가
+// macOS 패키징 전에 바로 사용할 수 있도록 순수 JS로 생성한다.
+const icnsEntries = [
+  ['icp4', 16],
+  ['icp5', 32],
+  ['icp6', 64],
+  ['ic07', 128],
+  ['ic08', 256],
+  ['ic09', 512],
+  ['ic10', 1024],
+];
+
+const icnsImages = await Promise.all(
+  icnsEntries.map(async ([type, size]) => ({
+    type,
+    buffer: await img.clone().resize(size, size).getBufferAsync(Jimp.MIME_PNG),
+  }))
+);
+
+const icnsLength = 8 + icnsImages.reduce((total, entry) => total + 8 + entry.buffer.length, 0);
+const icns = Buffer.alloc(icnsLength);
+icns.write('icns', 0, 4, 'ascii');
+icns.writeUInt32BE(icnsLength, 4);
+
+let icnsOffset = 8;
+for (const entry of icnsImages) {
+  const entryLength = 8 + entry.buffer.length;
+  icns.write(entry.type, icnsOffset, 4, 'ascii');
+  icns.writeUInt32BE(entryLength, icnsOffset + 4);
+  entry.buffer.copy(icns, icnsOffset + 8);
+  icnsOffset += entryLength;
+}
+
+writeFileSync(join(ROOT, 'assets', 'icon.icns'), icns);
+console.log('✓ assets/icon.icns (16/32/64/128/256/512/1024px)');

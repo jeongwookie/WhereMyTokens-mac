@@ -259,7 +259,8 @@ function claudeSettingsPath(): string {
 }
 
 function bridgeScriptPath(): string {
-  return path.join(app.getAppPath(), '..', 'bridge', 'bridge.js');
+  if (app.isPackaged) return path.join(process.resourcesPath, 'bridge', 'bridge.js');
+  return path.join(app.getAppPath(), 'dist', 'bridge', 'bridge.js');
 }
 
 export function registerIpcHandlers(
