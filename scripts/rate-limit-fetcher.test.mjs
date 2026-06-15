@@ -21,6 +21,9 @@ const originalReadFileSync = fs.readFileSync;
 const originalRequest = https.request;
 const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
 const originalDisableRefresh = process.env.WMT_DISABLE_REFRESH;
+const originalDisableClaudeKeychain = process.env.WMT_DISABLE_CLAUDE_KEYCHAIN;
+const originalDisableClaudeProcessCredentials = process.env.WMT_DISABLE_CLAUDE_PROCESS_CREDENTIALS;
+const originalClaudeHomeForTest = process.env.WMT_CLAUDE_HOME_FOR_TEST;
 let lastRequestOptions = null;
 const tempDirs = [];
 
@@ -60,6 +63,11 @@ function withTempClaudeCredentials(oauthOverrides = {}) {
 }
 
 function withMissingCredentials() {
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wmt-missing-claude-home-'));
+  tempDirs.push(homeDir);
+  process.env.WMT_CLAUDE_HOME_FOR_TEST = homeDir;
+  process.env.WMT_DISABLE_CLAUDE_KEYCHAIN = '1';
+  process.env.WMT_DISABLE_CLAUDE_PROCESS_CREDENTIALS = '1';
   fs.readFileSync = function patchedReadFileSync(target, ...args) {
     const filePath = String(target);
     if (filePath.endsWith('.credentials.json')) {
@@ -106,6 +114,12 @@ function restoreMocks() {
   else process.env.CLAUDE_CONFIG_DIR = originalClaudeConfigDir;
   if (originalDisableRefresh === undefined) delete process.env.WMT_DISABLE_REFRESH;
   else process.env.WMT_DISABLE_REFRESH = originalDisableRefresh;
+  if (originalDisableClaudeKeychain === undefined) delete process.env.WMT_DISABLE_CLAUDE_KEYCHAIN;
+  else process.env.WMT_DISABLE_CLAUDE_KEYCHAIN = originalDisableClaudeKeychain;
+  if (originalDisableClaudeProcessCredentials === undefined) delete process.env.WMT_DISABLE_CLAUDE_PROCESS_CREDENTIALS;
+  else process.env.WMT_DISABLE_CLAUDE_PROCESS_CREDENTIALS = originalDisableClaudeProcessCredentials;
+  if (originalClaudeHomeForTest === undefined) delete process.env.WMT_CLAUDE_HOME_FOR_TEST;
+  else process.env.WMT_CLAUDE_HOME_FOR_TEST = originalClaudeHomeForTest;
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
