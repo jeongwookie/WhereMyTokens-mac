@@ -5,6 +5,7 @@ import Store from 'electron-store';
 import { AppState, DebugMemSnapshot } from './stateManager';
 import { getHistory, clearHistory } from './notificationHistory';
 import { isDebugInstrumentationEnabled } from './debugInstrumentation';
+import { syncLoginItemSettings } from './loginItems';
 import {
   disableIntegration,
   getIntegrationStatus,
@@ -291,7 +292,7 @@ export function registerIpcHandlers(
       store.set(k as keyof AppSettings, v as AppSettings[keyof AppSettings]);
     }
     if (sanitized.openAtLogin !== undefined) {
-      app.setLoginItemSettings({ openAtLogin: sanitized.openAtLogin });
+      syncLoginItemSettings(sanitized.openAtLogin);
     }
     applySettingsChange();
     return normalizeSettings(store.store);

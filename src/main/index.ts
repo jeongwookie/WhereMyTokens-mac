@@ -9,12 +9,16 @@ import { initOAuthRefresh } from './oauthRefresh';
 import type { WindowStats } from './usageWindows';
 import type { ProviderId, ProviderQuotaWindow } from './providers/types';
 import { compactWidgetSize } from './compactWidgetSizing';
+import { syncLoginItemSettings } from './loginItems';
+import { whereMyTokensDataDir } from '../shared/platformPaths';
 
 if (isDebugInstrumentationEnabled()) {
   app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
 }
 
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
+
+app.setPath('userData', whereMyTokensDataDir());
 
 let tray: Tray | null = null;
 let popupWindow: BrowserWindow | null = null;
@@ -729,7 +733,7 @@ app.whenReady().then(() => {
   }
 
   // Auto-start at login
-  app.setLoginItemSettings({ openAtLogin: settings.openAtLogin });
+  syncLoginItemSettings(settings.openAtLogin);
 
   // App quit IPC
   ipcMain.handle('app:quit', () => { app.exit(0); });

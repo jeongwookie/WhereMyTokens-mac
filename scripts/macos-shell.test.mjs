@@ -12,6 +12,28 @@ test('main process uses macOS menu bar shell behavior', () => {
   assert.match(source, /trayBounds\.y \+ trayBounds\.height \+ POPUP_MARGIN/);
 });
 
+test('main process pins Electron userData to the shared WhereMyTokens macOS path', () => {
+  const source = fs.readFileSync('src/main/index.ts', 'utf8');
+
+  assert.match(source, /whereMyTokensDataDir/);
+  assert.match(source, /app\.setPath\('userData', whereMyTokensDataDir\(\)\)/);
+  assert.ok(
+    source.indexOf("app.setPath('userData', whereMyTokensDataDir())") < source.indexOf('new Store<AppSettings>'),
+    'userData must be pinned before electron-store is constructed',
+  );
+});
+
+test('login item settings are synchronized only when the desired state differs', () => {
+  const helper = fs.readFileSync('src/main/loginItems.ts', 'utf8');
+  const main = fs.readFileSync('src/main/index.ts', 'utf8');
+  const ipc = fs.readFileSync('src/main/ipc.ts', 'utf8');
+
+  assert.match(helper, /app\.getLoginItemSettings\(\)\.openAtLogin === openAtLogin/);
+  assert.match(helper, /app\.setLoginItemSettings\(\{ openAtLogin \}\)/);
+  assert.match(main, /syncLoginItemSettings\(settings\.openAtLogin\)/);
+  assert.match(ipc, /syncLoginItemSettings\(sanitized\.openAtLogin\)/);
+});
+
 test('Claude bridge path resolves packaged resources and local dist builds', () => {
   const source = fs.readFileSync('src/main/ipc.ts', 'utf8');
 
