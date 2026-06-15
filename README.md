@@ -198,7 +198,7 @@ WhereMyTokens reads local files and, when enabled, makes direct provider usage r
 | `~/.codex/auth.json` | ChatGPT OAuth material used only for Codex usage snapshots; it is not logged or copied into app storage. |
 | Antigravity local language server on `127.0.0.1` | Sessions, per-model quota percentages, reset times, and token metadata while Antigravity IDE is running and signed in. |
 | `~/Library/Application Support/WhereMyTokens/live-session.json` | Local bridge snapshot written by the Claude Code `statusLine` bridge. |
-| Electron app data (`~/Library/Application Support/WhereMyTokens`) | App settings, local caches, notification history, usage ledgers, and bridge state. |
+| Electron app data (`~/Library/Application Support/WhereMyTokens`) | App settings, local caches, notification history, `usage-ledger.json`, `git-output-ledger.json`, and bridge state. |
 
 Credential handling is intentionally narrow: WhereMyTokens reads provider credentials from the official local CLI files, does not ask you to paste API keys, does not store a separate credential backup, and redacts credential details from status output. If Claude's local access token expires, the app may refresh it through Anthropic and atomically write the updated credentials back to `~/.claude/.credentials.json`.
 
