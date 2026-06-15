@@ -1,24 +1,19 @@
-﻿<p align="center">
-  <img src="assets/source-icon.png" width="88" alt="WhereMyTokens icon" />
+<p align="center">
+  <img src="assets/source-icon.png" width="88" alt="WhereMyTokens app mark" />
 </p>
 
-<h1 align="center">WhereMyTokens</h1>
+<h1 align="center">WhereMyTokens for macOS</h1>
 
 <p align="center">
-  <strong>Claude Code, Codex, and Antigravity token usage, live in your macOS menu bar.</strong>
+  <strong>A local-first macOS menu bar app for Claude Code, Codex, and Antigravity usage.</strong>
 </p>
 
 <p align="center">
-  <img alt="Codex tracking" src="https://img.shields.io/badge/Codex_tracking-supported-4f46e5?style=for-the-badge">
-  <img alt="Antigravity" src="https://img.shields.io/badge/Antigravity-new-0f766e?style=for-the-badge">
+  <img alt="macOS menu bar" src="https://img.shields.io/badge/macOS-menu_bar-000000?style=for-the-badge">
   <img alt="Claude Code" src="https://img.shields.io/badge/Claude_Code-supported-d97706?style=for-the-badge">
-  <img alt="Local only" src="https://img.shields.io/badge/Local_only-no_cloud_sync-0f766e?style=for-the-badge">
-</p>
-
-<p align="center">
-  <img alt="macOS" src="https://img.shields.io/badge/macOS-menu_bar-000000?style=for-the-badge">
-  <img alt="Release" src="https://img.shields.io/github/v/release/jeongwookie/WhereMyTokens?style=for-the-badge">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge">
+  <img alt="Codex tracking" src="https://img.shields.io/badge/Codex-supported-4f46e5?style=for-the-badge">
+  <img alt="Antigravity" src="https://img.shields.io/badge/Antigravity-local_RPC-0f766e?style=for-the-badge">
+  <img alt="Local only" src="https://img.shields.io/badge/local_first-no_cloud_sync-0f766e?style=for-the-badge">
 </p>
 
 <p align="center">
@@ -26,20 +21,18 @@
 </p>
 
 <p align="center">
-  <a href="#install-from-source"><strong>Build the macOS app</strong></a>
+  <a href="#install"><strong>Install</strong></a>
   ·
-  <a href="#features">Features</a>
+  <a href="#first-run">First Run</a>
   ·
-  <a href="#screenshots">Screenshots</a>
+  <a href="#macos-design">macOS Design</a>
+  ·
+  <a href="#privacy">Privacy</a>
 </p>
 
-<p align="center">
-  <em>v1.18.2 fixes long Rich quota card title overflow while preserving ellipsis truncation.</em>
-</p>
+WhereMyTokens lives in the macOS menu bar and opens a compact dashboard for local AI-coding usage: token totals, cost estimates, cache efficiency, quota windows, session status, model usage, activity charts, and git output metrics.
 
-<p align="center">
-  A local-first macOS menu bar app for monitoring Claude Code, Codex, and Antigravity tokens, costs, sessions, cache, model usage, and rate limits at a glance.
-</p>
+This repository is the macOS port workspace. The original Windows app was imported as a baseline on `main`; active macOS work happens on `codex/dev-macos-port` and feature branches. Do not merge implementation work into `main` until the final review is complete.
 
 <a id="screenshots"></a>
 
@@ -48,339 +41,198 @@
     <th>Dark Overview</th>
   </tr>
   <tr>
-    <td><img src="assets/screenshot-overview-dark.png" alt="WhereMyTokens dark overview collage" /></td>
+    <td><img src="assets/screenshot-overview-dark.png" alt="WhereMyTokens dark overview" /></td>
   </tr>
   <tr>
     <th>Light Overview</th>
   </tr>
   <tr>
-    <td><img src="assets/screenshot-overview-light.png" alt="WhereMyTokens light overview collage" /></td>
+    <td><img src="assets/screenshot-overview-light.png" alt="WhereMyTokens light overview" /></td>
   </tr>
 </table>
-
-> Built by a Korean developer who uses Claude Code daily — scratching my own itch.
 
 ## What's New
 
 | Version | Date | Highlights |
-|---------|------|-----------|
-| **[v1.18.2](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.2)** | Jun 5 | Fix long Rich quota card titles so Plan Usage columns stay aligned while keeping the ellipsis cue and tooltip fallback |
-| **[v1.18.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.1)** | Jun 4 | Stabilize Antigravity quota selection and pacing, prevent startup Partial History loops, mask account labels, and keep model token stats visible |
-| **[v1.18.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.0)** | Jun 2 | Add local-only Antigravity provider support with process discovery, local RPC quota/session scanning, persisted usage cache, and provider ledger import |
-| **[v1.17.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.17.0)** | Jun 2 | Refactor Plan Usage around provider quota snapshots, add per-target quota display groups, and harden provider quota state migration/fallback behavior |
-| **[v1.16.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.16.1)** | May 27 | Keep budgeted ledger warmup running after truncated or failed full-history imports and avoid stale provider completion markers |
+|---------|------|------------|
+| **[v1.18.2](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.2)** | Jun 5 | Fix long Rich quota card titles so Plan Usage columns stay aligned while keeping ellipsis and tooltip fallback. |
+| **[v1.18.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.1)** | Jun 4 | Stabilize Antigravity quota selection and pacing, prevent startup Partial History loops, mask account labels, and keep model token stats visible. |
+| **[v1.18.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.0)** | Jun 2 | Add local-only Antigravity provider support with process discovery, local RPC quota/session scanning, persisted usage cache, and provider ledger import. |
+| **[v1.17.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.17.0)** | Jun 2 | Refactor Plan Usage around provider quota snapshots, per-target display groups, and safer quota state migration. |
+| **[v1.16.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.16.1)** | May 27 | Keep budgeted ledger warmup running after truncated or failed full-history imports and avoid stale provider completion markers. |
 
-[→ Full changelog](https://github.com/jeongwookie/WhereMyTokens/releases)
+## Install
 
----
+### Option 1: DMG installer
 
-## macOS Build
+Use this for normal macOS installation after a release asset is published.
 
-This branch is the macOS port. Build a local `.app`, `.dmg`, or `.zip` from source:
+1. Download `WhereMyTokens-<version>-mac-arm64.dmg` from the release assets.
+2. Open the DMG.
+3. Drag `WhereMyTokens.app` into `/Applications`.
+4. Eject the DMG.
+5. Launch `WhereMyTokens` from `/Applications`.
+
+The current local build is ad-hoc signed but not Apple notarized. Until a Developer ID certificate and notarization pipeline are added, macOS Gatekeeper may show an "unidentified developer" warning on first launch. For internal testing, right-click the app and choose **Open**, or use **System Settings -> Privacy & Security -> Open Anyway**. For public distribution, the release must be Developer ID signed, notarized, and stapled.
+
+### Option 2: ZIP app archive
+
+Use this when you want a simple archive instead of a mounted DMG.
+
+1. Download `WhereMyTokens-<version>-arm64-mac.zip`.
+2. Unzip it.
+3. Move `WhereMyTokens.app` into `/Applications`.
+4. Launch it from `/Applications`.
+
+### Option 3: Build from source
+
+Use this for development or private builds.
 
 ```bash
 npm install
 npm run dist:mac
 ```
 
-By building or installing, you agree to the [End-User License Agreement (EULA)](EULA.txt).
+Generated artifacts:
 
----
+| Artifact | Purpose |
+|----------|---------|
+| `release/mac-arm64/WhereMyTokens.app` | Built macOS app bundle. |
+| `release/WhereMyTokens-<version>-mac-arm64.dmg` | Drag-to-Applications installer image. |
+| `release/WhereMyTokens-<version>-arm64-mac.zip` | Zipped app archive. |
+
+The current packaged target is Apple Silicon (`arm64`). Add an x64 or universal target before publishing to Intel Mac users.
+
+By building or installing, you agree to the [End-User License Agreement](EULA.txt).
+
+## First Run
+
+1. Look for the WhereMyTokens item in the macOS menu bar.
+2. Click it to open the dashboard. The app hides the Dock icon and behaves like a menu bar utility.
+3. Open **Settings** and choose which providers to track: Claude Code, Codex, Antigravity, or any combination.
+4. Optional: enable **Claude Code Integration** to register the `statusLine` bridge for live Claude context and fallback rate-limit data.
+5. Optional: enable **Start at login** if you want WhereMyTokens to launch automatically after macOS login.
+
+Default local data location:
+
+```text
+~/Library/Application Support/WhereMyTokens
+```
+
+The Claude bridge snapshot is written to:
+
+```text
+~/Library/Application Support/WhereMyTokens/live-session.json
+```
 
 ## Features
 
-### Session Tracking
-- **Provider checkboxes** — track Claude, Codex, Antigravity, or any enabled combination in one dashboard
-- **Live session detection** — Terminal, VS Code, Cursor, Windsurf, and more with real-time status: `active` / `waiting` / `idle` / `compacting`
-- **Recent + active popup scope** — keep the tray popup focused on active sessions and recently touched work instead of reopening the full local archive on every refresh
-- **Compact grouping** — sessions grouped by git project → branch, with repeated provider sessions stacked by provider, source, model, and state
-- **Branch row limit** — each branch shows the first 3 rows by default, with "Show N more" for the rest
-- **Context window warnings** — per-session bar; amber at 70%, orange at 85%, red at 95%+
-- **Tool usage bars** — proportional color bar + tool chips (Bash, Edit, Read, …)
+### Usage And Quotas
 
-### Rate Limits & Alerts
-- **Provider quota bars** — Claude, Codex, Antigravity, and future providers publish effective quota snapshots through `providerQuotas`; Claude uses Anthropic API/statusLine/cache precedence, Codex uses live usage/cache/local-log precedence, and Antigravity uses local RPC model quota snapshots
-- **Per-target quota display** — each provider window or model target can be shown as Rich, Simple, or hidden in Settings; this affects Plan Usage and the floating widget only
-- **Quota Pace view** — compares used quota % with elapsed window %; yellow/red means usage pace is ahead of the reset window
-- **Claude Code bridge** — register as a `statusLine` plugin for live rate limit data without API polling
-- **System notifications** — at configurable usage thresholds (50% / 80% / 90%)
-- **Claude Extra Usage budget** — Claude monthly credits used / limit / utilization %
+- Claude Code, Codex, and Antigravity provider checkboxes.
+- Provider adapters live under `src/main/providers/` so future providers can join the same quota/session/usage shape.
+- Rich quota cards for provider reset windows and model quota targets.
+- Cache efficiency, saved-cost estimates, and provider health chips.
+- Claude usage via Anthropic API, local `statusLine` bridge fallback, and cache fallback.
+- Codex usage via live usage endpoint, cache fallback, and local JSONL `rate_limits`.
+- Antigravity usage through the running IDE's local language server on `127.0.0.1`.
 
-### Analytics & Activity
-- **Header stats** - today/all-time toggle: cost, API calls, sessions, cache efficiency, savings, compact Claude/Codex metadata, and provider health/fallback status. In `all`, session count comes from full usage history, not just currently visible rows
-- **Instant startup snapshots** — the tray popup restores the last good UI state immediately while fresh scans continue in the background
-- **Startup-friendly history sync** — current sessions and recent usage appear first; older history continues through a budgeted refresh scheduler with a `Partial History` banner so hotkeys and popup interactions stay responsive
-- **Persistent usage ledger** — rolls local JSONL usage into a local aggregate ledger so older totals survive JSONL cache eviction, refresh faster after warmup, and can be repaired from Settings if needed
-- **Trend card** — daily, weekly, or monthly cost/token trend overlaid with git net-line output, with partial data shown without false zero-value dips
-- **Activity tabs** — 7-day heatmap, 5-month calendar (GitHub-style), hourly distribution, 4-week comparison
-- **Rhythm tab** — time-of-day cost distribution (Morning/Afternoon/Evening/Night) with gradient bars, peak detail stats, local timezone
-- **Model breakdown** — top per-model token and cost totals with gradient bars
-- **Activity Breakdown** — Claude output-token categories and Codex tool-event categories (Thinking, Edit/Write, Read, Search, Git, etc.)
+### Sessions
 
-### Code Output & Productivity
-- **Git-based metrics** — commits, net lines changed, **$/100 Added** (cost per 100 added lines)
-- **Today vs all-time** - today shows actual cost per added line with average for comparison
-- **Output growth chart** - shows cumulative net line growth from an all-time baseline across the latest 7 local days
-- **Current session repo scope** - Code Output now labels that git totals are scoped to repos tied to your current tracked sessions
-- **Branch-aware all-time** - all-time Code Output counts commits and line changes across local branches, using your local git author email
-- **Auto-discovery** — Claude projects from `~/.claude/projects/` including agent usage logs, Codex sessions from `~/.codex/sessions/`, `~/.codex/archived_sessions/`, and `~/.codex/session-cleanup-archive/`, plus running Antigravity IDE cascades through local RPC
-- **Your commits only** — filtered by `git config user.email`
+- Local session discovery for Claude and Codex JSONL/session files.
+- Antigravity cascade discovery through local RPC while the IDE is running.
+- Project and branch grouping from local git metadata.
+- Context, status, model, token, and cost summaries for active and recent work.
 
-### Customization
-- **Auto/Light/Dark theme** — follows system preference by default
-- **Cost display** — USD or KRW with configurable exchange rate
-- **Floating usage widget** — compact Quota Pace window with always-on-top support; show/hide it from the main header, tray menu, Settings, or widget controls. Waiting animations are off by default and can be re-enabled in Settings
-- **Menu bar label** — show usage %, token count, or cost directly in the macOS menu bar
-- **Dashboard layout** — reorder cards and hide cards you do not need
-- **Project management** — hide or fully exclude projects from tracking
-- **Start at login** — optional auto-launch at login
+### Analytics
 
----
+- Today and all-time totals.
+- Usage ledger and git output ledger stored locally as `usage-ledger.json` and `git-output-ledger.json`.
+- **Rebuild ledger** in Settings can reset and replay the persisted usage ledger from local history when totals need repair.
+- Trend card combining usage cost/tokens with git net-line output.
+- Activity heatmaps, rhythm charts, model breakdowns, and tool activity summaries.
 
-## Quick Start
+### macOS Utilities
 
-### 1. Open the dashboard
-Click the menu bar icon (or press the global shortcut `Ctrl+Shift+D`).
+- Menu bar label can show usage percent, token count, or cost.
+- Floating quota widget can stay above other windows.
+- Light, dark, and system-auto themes.
+- Start-at-login setting.
+- System notifications for quota thresholds.
 
-### 2. Connect Claude Code bridge (optional)
-**Settings → Claude Code Integration → Setup** — enables live rate limit data without API polling.
+## macOS Design
 
-### 3. Configure
-- **Providers** — enable Claude Code, Codex, and/or Antigravity checkboxes
-- **Currency** — USD or KRW
-- **Alerts** — set usage thresholds (50% / 80% / 90%)
-- **Theme** — Auto (follows system) / Light / Dark
-- **Menu bar label** — choose what to display in the menu bar
-- **Main Layout** — reorder dashboard cards or hide optional cards
-- **Data -> Rebuild ledger** — reset and replay the aggregate usage ledger from local history if you need to repair totals
-- **Floating usage widget** — enable the compact Quota Pace window; use the main header toggle or tray menu to show or hide it later
+The macOS port is not just the older desktop tray shell repackaged:
 
----
+| Area | Current decision |
+|------|------------------|
+| App shell | Menu bar utility with the Dock hidden on startup. |
+| Status item | Uses a template-style menu bar icon so macOS can tint it correctly in light and dark menu bars. |
+| Popup placement | Opens below the menu bar item on macOS and clamps inside the active display work area. |
+| Data location | Uses `~/Library/Application Support/WhereMyTokens` instead of legacy roaming app data. |
+| Logs | Uses `~/Library/Logs/WhereMyTokens` for debug instrumentation. |
+| App icon | Generates `.icns` from the existing app mark and bundles it into `WhereMyTokens.app`. |
+| Installer | Builds DMG and ZIP artifacts with `electron-builder`. |
 
-## Architecture
+Design status before public release:
 
-WhereMyTokens is a local-first Electron menu bar app. The renderer never reads local files or credentials directly; all filesystem, provider API, menu bar, and settings work stays in the Electron main process and is exposed through the preload bridge.
+- The dashboard UI is functional and verified on macOS, including the rendered popup.
+- The menu bar behavior has been smoke-tested with a packaged `.app`.
+- The app bundle icon is technically wired and visible to macOS, but the current icon is the existing black-and-white mark converted to ICNS. It is acceptable for internal testing; a public release should get a final macOS icon pass with a 1024x1024 source, Big Sur style proportions, Finder-scale legibility, and dark/light background checks.
+- The DMG currently uses default `electron-builder` presentation. A polished public release should add a DMG background, clear Applications shortcut layout, Developer ID signing, notarization, and stapling.
 
-| Layer | Responsibility |
-|-------|----------------|
-| Electron main | Discovers Claude/Codex/Antigravity sessions, parses local usage sources, fetches provider usage, manages tray/window state, and persists app settings. |
-| Preload bridge | Exposes the typed `window.wmt` IPC surface while keeping `contextIsolation` boundaries intact. |
-| React renderer | Shows the menu bar dashboard, settings, notifications, activity charts, and the compact quota widget. |
-| `statusLine` bridge | `src/bridge/bridge.ts` receives Claude Code JSON on stdin and writes a local bridge snapshot for the main process to watch. |
+## Privacy
 
-| Data flow | Source | Destination | Network |
-|-----------|--------|-------------|---------|
-| Claude sessions | `~/.claude/sessions/*.json`, `~/.claude/projects/**/*.jsonl` | Main-process parser/cache, then renderer state | No |
-| Claude bridge | Claude Code `statusLine` stdin | `~/Library/Application Support/WhereMyTokens/live-session.json` | No |
-| Claude quota snapshot | `~/.claude/.credentials.json` OAuth token | Anthropic `/api/oauth/usage` | Yes, direct to Anthropic |
-| Codex sessions | `~/.codex/sessions/**/*.jsonl`, `~/.codex/archived_sessions/**/*.jsonl`, `~/.codex/session-cleanup-archive/**/*.jsonl` | Main-process parser/cache, then renderer state | No |
-| Codex quota snapshot | `~/.codex/auth.json` OAuth token | ChatGPT/Codex usage endpoint | Yes, direct to OpenAI/ChatGPT |
-| Antigravity sessions, model quota, and usage metadata | Running Antigravity language server on `127.0.0.1` | Main-process local RPC client, then renderer state | No external network |
-| Aggregate usage ledger | Local JSONL usage summaries | Electron app data (`~/Library/Application Support/WhereMyTokens`) | No |
-| Git output ledger | Local git scans | Electron app data (`~/Library/Application Support/WhereMyTokens`) | No |
+WhereMyTokens is local-first. It does not run a cloud sync service and does not upload session logs.
 
-Rate-limit precedence is provider-specific and is assembled into `AppState.providerQuotas`: Claude uses the Anthropic API first, then the `statusLine` bridge and cache; Codex uses live usage first, then cache and local `rate_limits` events from JSONL logs; Antigravity uses the running IDE language server's local RPC model quota data. API/Bridge/Cache/Log/Local RPC chips are renderer labels derived from the snapshot `source`, not separate state fields. Settings store provider enablement separately from quota display preferences. The `Providers` setting controls scanning, quota fetching, sessions, statistics, and alerts. `Quota display` stores only `Rich`, `Simple`, or `None` per target and affects Plan Usage and the floating widget only.
+| Local path or endpoint | Purpose |
+|------------------------|---------|
+| `~/.claude/sessions/*.json` | Claude session metadata. |
+| `~/.claude/projects/**/*.jsonl` | Claude token, cost, context, and activity summaries. |
+| `~/.claude/.credentials.json` | Claude OAuth material for Anthropic usage requests and token refresh. |
+| `~/.codex/sessions/**/*.jsonl` | Recent Codex session usage and tool activity. |
+| `~/.codex/archived_sessions/**/*.jsonl` | Archived Codex usage included in all-time totals. |
+| `~/.codex/session-cleanup-archive/**/*.jsonl` | Codex cleanup archives included in all-time totals. |
+| `~/.codex/auth.json` | ChatGPT/Codex OAuth material for live usage snapshots. |
+| `127.0.0.1` Antigravity language server | Local-only session, quota, and token metadata while Antigravity is running. |
+| `~/Library/Application Support/WhereMyTokens` | App settings, local caches, ledgers, notification history, and bridge state. |
 
----
+Network access is limited to provider usage endpoints for enabled providers. Antigravity support uses loopback local RPC only; it does not use Google OAuth, refresh tokens, Google cloud usage endpoints, or offline database fallback.
 
-## Security & Privacy
+To disable the Claude Code bridge, open **Settings -> Claude Code Integration -> Disable**. The app removes only the WhereMyTokens-owned `statusLine` entry and leaves other custom `statusLine` settings intact.
 
-WhereMyTokens reads local files and, when enabled, makes direct provider usage requests for your own account. There is no cloud sync and no telemetry.
-
-| Local path | Purpose |
-|------------|---------|
-| `~/.claude/sessions/*.json` | Claude session metadata such as pid, cwd, and model. |
-| `~/.claude/projects/**/*.jsonl` | Claude conversation logs used for token counts, costs, context, and activity summaries. |
-| `~/.claude/.credentials.json` | Claude OAuth material used only for Anthropic usage requests and expired access-token refresh. |
-| `~/.codex/sessions/**/*.jsonl` | Recent Codex session logs used for tokens, cached input, models, rate-limit events, and tool activity. |
-| `~/.codex/archived_sessions/**/*.jsonl` | Archived Codex session logs included in all-time usage totals. |
-| `~/.codex/session-cleanup-archive/**/*.jsonl` | Codex session-cleanup archives included in all-time usage totals. |
-| `~/.codex/auth.json` | ChatGPT OAuth material used only for Codex usage snapshots; it is not logged or copied into app storage. |
-| Antigravity local language server on `127.0.0.1` | Sessions, per-model quota percentages, reset times, and token metadata while Antigravity IDE is running and signed in. |
-| `~/Library/Application Support/WhereMyTokens/live-session.json` | Local bridge snapshot written by the Claude Code `statusLine` bridge. |
-| Electron app data (`~/Library/Application Support/WhereMyTokens`) | App settings, local caches, notification history, `usage-ledger.json`, `git-output-ledger.json`, and bridge state. |
-
-Credential handling is intentionally narrow: WhereMyTokens reads provider credentials from the official local CLI files, does not ask you to paste API keys, does not store a separate credential backup, and redacts credential details from status output. If Claude's local access token expires, the app may refresh it through Anthropic and atomically write the updated credentials back to `~/.claude/.credentials.json`.
-
-Network access is limited to provider usage endpoints for enabled providers. Disabled providers are not scanned locally and do not make live usage requests. Claude usage polling runs at most every 5 minutes with 429 backoff. Codex live usage uses HTTPS-only requests with timeout, response-size cap, cache, and backoff. Antigravity uses loopback local RPC only; it does not use Google OAuth, refresh tokens, Google cloud usage endpoints, or offline database fallback. Local JSONL parsing, Antigravity local RPC, and the `statusLine` bridge do not send session contents anywhere.
-
-To disable the Claude Code bridge, open **Settings -> Claude Code Integration -> Disable**. The app removes the `statusLine` entry only when it owns the WhereMyTokens bridge command; it will not overwrite or delete another custom `statusLine`. Manual removal is also possible by deleting the WhereMyTokens `statusLine` entry from `~/.claude/settings.json`, then restarting Claude Code.
-
----
-
-## Startup & Header States
-
-At startup the dashboard shows current sessions and recent usage first. If you see `Partial History`, older history is still syncing in budgeted background slices so the tray app can open quickly and hotkey popups stay responsive.
-
-The small PiP button in the header toggles the floating Quota Pace widget. The header status pill summarizes the most important provider/API state in one place. Common labels are `Claude local`, `Claude partial`, `Claude refresh`, `Claude login`, `Claude limited`, `Claude offline`, `Antigravity unavailable`, and `refresh failed`. The Quota Pace widget shows provider-specific health chips such as `Claude OK`, `Codex OK`, and `Antigravity OK`; hover any pill for the latest detail.
-
----
-
-## Provider Tracking Details
-
-### Claude Code bridge
-
-WhereMyTokens can receive live context, model, cost, and fallback rate-limit data through Claude Code's official `statusLine` plugin mechanism. Use **Settings -> Claude Code Integration -> Setup** to register the bridge, or **Disable** to remove the WhereMyTokens-owned bridge entry.
-
-### Codex tracking
-
-WhereMyTokens can also read Codex's local JSONL logs from `~/.codex/sessions/**/*.jsonl`, `~/.codex/archived_sessions/**/*.jsonl`, and `~/.codex/session-cleanup-archive/**/*.jsonl`. In Settings, enable the provider checkboxes you want to track.
-
-**What Codex tracking includes:**
-- Session status, project/branch grouping, source labels such as VS Code or Codex Exec
-- Model usage and API-equivalent cost estimates for GPT/Codex models
-- Input, cached input, output tokens, cache savings, and all-time model totals
-- 5h/1w Codex limit percentages and reset times from live Codex usage when available, with cache/local `rate_limits` fallback
-- Activity Breakdown based on tool events, because Codex logs expose tool calls rather than per-tool output-token attribution
-
-**Prompt cache math:** Codex logs report `input_tokens` and `cached_input_tokens`; WhereMyTokens stores uncached input as `input_tokens - cached_input_tokens` and cached input as cache-read tokens. Codex and Antigravity show cache efficiency as cache reads divided by prompt tokens:
-
-```text
-cache_read_tokens / (uncached_input_tokens + cache_creation_tokens + cache_read_tokens)
-```
-
-For Codex this is equivalent to `cached_input_tokens / input_tokens`. Claude differs because it tracks cache write/read efficiency:
-
-```text
-cache_read_input_tokens / (cache_read_input_tokens + cache_creation_input_tokens)
-```
-
-### Antigravity tracking
-
-WhereMyTokens can read a running, signed-in Antigravity IDE through its local language server on `127.0.0.1`. In Settings, enable the Antigravity provider checkbox.
-
-**Antigravity tracking includes:**
-- Cascade sessions grouped with the same provider/session UI as Claude and Codex
-- Per-model quota percentages and reset times from `GetUserStatus`
-- Token metadata from `GetCascadeTrajectoryGeneratorMetadata`, with bounded full-trajectory fallback
-- API-equivalent cost estimates for recognized local model metadata; unpriced models stay zero/hidden
-
-Antigravity model quota cards are percent-only by default. Enable **Antigravity quota pace** in Settings to estimate 5h/weekly pacing from reset times.
-
-Antigravity support is local-only. It does not read Google OAuth credentials, refresh tokens, Google cloud usage endpoints, credits, or offline `state.vscdb` data.
-
-## How numbers work
-
-All token counts include **input + output + cache creation + cache reads** where available. Cost is always an API-equivalent estimate using the app's local pricing table.
-
-Claude reports input, output, cache creation, and cache reads. Codex reports raw input, cached input, and output; WhereMyTokens splits raw input into uncached input and cached input so cache savings and model totals are not double-counted.
-
-| Display | Scope | What's counted |
-|---------|-------|----------------|
-| Header (today) | Since midnight | In/Out/Cache + calls, sessions, cache savings |
-| Header (all) | All time | In/Out/Cache + calls, sessions, cache savings |
-| Plan Usage (provider quotas) | Provider reset windows | Provider token types + `providerQuotas[provider]` windows, status, source, credits, and per-target Rich/Simple/None display modes |
-| Model Usage | All time, top 4 models by provider | All token types |
-
-> **Note:** `$` values are estimates — not your actual bill. Claude Max/Pro subscriptions are flat monthly fees. The cost display shows how much usage value you are getting.
-
----
-
-## Activity tabs
-
-| Tab | Description |
-|-----|-------------|
-| 7d | 7-day heatmap (day-of-week × hour grid) with time axis and color legend |
-| 5mo | 5-month calendar grid (GitHub-style, hover for date + tokens) |
-| Hourly | Hourly token distribution across the last 30 days |
-| Weekly | Last 4 weeks horizontal bar chart |
-| Rhythm | Time-of-day cost distribution — Morning ☀️ / Afternoon 🔥 / Evening 🌆 / Night 🌙 with gradient bars, peak detail stats (tokens, cost, requests %), and local timezone (30-day) |
-
----
-
-## Activity Breakdown
-
-Click the **Details** button on any session row to expand activity by category. Claude sessions show output-token attribution. Codex sessions show tool-event counts, because Codex logs expose function/tool calls rather than output tokens per tool.
-
-| Category | Color | Source |
-|----------|-------|--------|
-| 💭 Thinking | Teal | Extended thinking blocks |
-| 💬 Response | Slate | Text blocks — the final answer |
-| 📄 Read | Blue | `Read` tool |
-| ✏️ Edit / Write | Violet | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` |
-| 🔍 Search | Sky | `Grep`, `Glob`, `LS`, `TodoRead`, `TodoWrite` |
-| 🌿 Git | Green | `Bash` — `git` commands |
-| ⚙️ Build / Test | Orange | `Bash` — `npm`, `tsc`, `jest`, `cargo`, `python`, etc. |
-| 💻 Terminal | Amber | Other `Bash` commands; `mcp__*` tools |
-| 🤖 Subagents | Pink | `Agent` tool |
-| 🌐 Web | Purple | `WebFetch`, `WebSearch` |
-
-> **Token attribution:** each turn's output tokens are split across content blocks by character proportion (`block_chars ÷ total_chars × output_tokens`). Zero-value categories are hidden.
-
----
-
-## Install from Source
-
-### Requirements
-
-- macOS
-- [Node.js](https://nodejs.org) 18+
-- [Claude Code](https://claude.ai/code) installed and logged in
-
-### Build & Run
+## Development
 
 ```bash
-git clone https://github.com/jeongwookie/WhereMyTokens.git
-cd WhereMyTokens
 npm install
 npm run build
-npm start
+npm test
+npm run dist:mac
 ```
 
-### Build macOS app
+Useful verification for the macOS port:
 
 ```bash
 npm run dist:mac
-# -> release/WhereMyTokens-x.x.x-mac-*.dmg
-# -> release/WhereMyTokens-x.x.x-mac-*.zip
+codesign --verify --deep --strict --verbose=2 release/mac-arm64/WhereMyTokens.app
+"release/mac-arm64/WhereMyTokens.app/Contents/MacOS/WhereMyTokens"
 ```
 
----
+Runtime smoke test checklist:
 
-## Project structure
+- App process stays alive after launch.
+- No fatal stderr output during startup.
+- Child process args use `--user-data-dir=.../Library/Application Support/WhereMyTokens`.
+- Menu bar item appears.
+- Dashboard popup renders real content, not a blank window.
+- Quitting leaves no `WhereMyTokens` process behind.
 
-```
-src/
-  main/
-    index.ts              Electron main, tray, popup window
-    stateManager.ts       Polling, state assembly, bridge integration
-    jsonlParser.ts        Parses conversation JSONL files (with incremental cache)
-    jsonlCache.ts         mtime-based JSONL parse cache
-    providers/            Claude/Codex provider adapters for discovery, quota, and usage sources
-    usageWindows.ts       5h/1w window aggregation + heatmaps
-    rateLimitFetcher.ts   Anthropic API usage fetch (with backoff)
-    codexUsageFetcher.ts  Codex usage fetch (safe headers, backoff, cache)
-    bridgeWatcher.ts      Watches live-session.json from statusLine bridge
-    gitStatsCollector.ts  Git branch, commit, and line stats
-    ipc.ts                IPC handlers, settings, integration setup
-    preload.ts            contextBridge (window.wmt)
-  bridge/
-    bridge.ts             statusLine plugin: stdin → live-session.json
-  renderer/
-    App.tsx               Root with theme provider + system dark mode detection
-    theme.ts              Light/Dark palettes + CSS custom properties
-    views/                MainView, SettingsView, NotificationsView, HelpView
-    components/           SessionRow, TokenStatsCard, ActivityChart, CodeOutputCard, ...
-```
+## Release Checklist
 
-## Disclaimer
-
-Costs shown are **API-equivalent estimates**, not actual billing. Claude Max/Pro subscriptions are flat monthly fees. The cost display shows how much usage value you are getting out of your subscription.
-
----
-
-## Contributing
-
-Issues and pull requests are welcome. Please open an issue first to discuss what you'd like to change.
-
----
-
-## Acknowledgements
-
-Inspired by [duckbar](https://github.com/rofeels/duckbar) — the macOS counterpart.
-
----
-
-## License
-
-MIT
+- Build DMG and ZIP on a clean macOS machine.
+- Verify `.app` contents include `Resources/bridge/bridge.js` and `Resources/shared/platformPaths.js`.
+- Verify code signing.
+- Add Developer ID signing and notarization before public distribution.
+- Review final app icon at Finder, Dock, Spotlight, and DMG sizes.
+- Verify first-run install copy and Gatekeeper behavior.
+- Confirm `main` has not received implementation merges before final owner review.
