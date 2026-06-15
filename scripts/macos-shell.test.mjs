@@ -10,6 +10,18 @@ test('main process uses macOS menu bar shell behavior', () => {
   assert.match(source, /app\.dock\?\.hide\(\)/);
   assert.match(source, /trayIsNearTop/);
   assert.match(source, /trayBounds\.y \+ trayBounds\.height \+ POPUP_MARGIN/);
+  assert.match(source, /providerMenuBarLabel/);
+  assert.match(source, /Claude 5h/);
+  assert.match(source, /Codex 5h/);
+  assert.match(source, /win\.on\('blur'/);
+});
+
+test('macOS popover keeps its scrollable body outside the drag region', () => {
+  const source = fs.readFileSync('src/renderer/views/MacMenuBarPopoverView.tsx', 'utf8');
+
+  assert.match(source, /const noDrag = \{ WebkitAppRegion: 'no-drag' \}/);
+  assert.match(source, /\.\.\.noDrag,\s*minHeight: 0,\s*overflowY: 'auto'/s);
+  assert.match(source, /gridTemplateRows: 'auto 1fr auto',\s*minHeight: 0/s);
 });
 
 test('main process pins Electron userData to the shared WhereMyTokens macOS path', () => {

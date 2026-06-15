@@ -36,8 +36,9 @@ let registeredGlobalHotkey = '';
 const readyWidgetWindows = new WeakSet<BrowserWindow>();
 
 type AppView = 'main' | 'settings' | 'notifications' | 'help';
-const POPUP_WIDTH = 462;
-const POPUP_HEIGHT = 1078;
+const IS_MAC = process.platform === 'darwin';
+const POPUP_WIDTH = IS_MAC ? 430 : 462;
+const POPUP_HEIGHT = IS_MAC ? 640 : 1078;
 const POPUP_MARGIN = 8;
 function registerDebugTargets() {
   setListenerTargetsProvider(() => ([
@@ -149,7 +150,9 @@ function createPopupWindow(): BrowserWindow {
     resizable: false,
     skipTaskbar: true,
     alwaysOnTop: settings.alwaysOnTop,
-    backgroundColor: '#0d0d1a',
+    transparent: IS_MAC,
+    hasShadow: true,
+    backgroundColor: IS_MAC ? '#00000000' : '#0d0d1a',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -160,7 +163,7 @@ function createPopupWindow(): BrowserWindow {
   keepWindowOutOfTaskbar(win);
   installNavigationGuards(win);
   const rendererPath = path.join(app.getAppPath(), 'dist', 'renderer', 'index.html');
-  win.loadFile(rendererPath);
+  win.loadFile(rendererPath, IS_MAC ? { query: { view: 'mac-popover' } } : undefined);
   win.on('move', markPopupMoving);
   win.on('show', () => {
     keepWindowOutOfTaskbar(win);
@@ -168,9 +171,15 @@ function createPopupWindow(): BrowserWindow {
   });
   win.on('hide', syncUiVisibility);
   win.webContents.on('context-menu', openDashboardContextMenu);
+  if (IS_MAC) {
+    win.on('blur', () => {
+      if (!win.isDestroyed()) win.hide();
+    });
+  }
   registerDebugTargets();
 
-  // blur 시 자동 숨김 없음 — 항상 떠있는 위젯 모드
+  // Non-macOS dashboard keeps the existing sticky behavior; the macOS menu-bar popover
+  // behaves like a native status item and collapses on blur.
 
   return win;
 }
@@ -565,6 +574,27 @@ function trayH5Stats(state: AppState, provider: ProviderId): WindowStats | null 
   return selected;
 }
 
+function providerMenuBarLabel(provider: ProviderId): string {
+  if (provider === 'claude') return 'Claude 5h';
+  if (provider === 'codex') return 'Codex 5h';
+  if (provider === 'antigravity') return 'AG 5h';
+  return `${provider} 5h`;
+}
+
+function trayH5HasSignal(state: AppState, provider: ProviderId): boolean {
+  const quota = state.providerQuotas[provider];
+  for (const windowKey of trayH5WindowKeys(state, provider)) {
+    const window = quotaWindow(state, provider, windowKey);
+    const stats = usageWindow(state, provider, windowKey);
+    if (window && (window.pct > 0 || window.resetMs != null || !!window.resetLabel || !!window.source)) return true;
+    if (stats && (stats.totalTokens > 0 || stats.requestCount > 0 || stats.costUSD > 0)) return true;
+  }
+  for (const model of quota?.models ?? []) {
+    if (isFiveHourDuration(model.durationMs)) return true;
+  }
+  return false;
+}
+
 function trayH5Pct(state: AppState, provider: ProviderId): { pct: number; provisional: boolean } {
   const quota = state.providerQuotas[provider];
   let pct = 0;
@@ -589,6 +619,22 @@ function trayH5Pct(state: AppState, provider: ProviderId): { pct: number; provis
   return { pct, provisional };
 }
 
+function buildMacTrayTitle(state: AppState, h5CostLabel: string, h5Cost: number): string {
+  const settings = state.settings ?? DEFAULT_SETTINGS;
+  const parts = settings.enabledProviders.map(provider => {
+    const pct = trayH5Pct(state, provider);
+    const hasSignal = trayH5HasSignal(state, provider);
+    const value = pct.provisional && pct.pct <= 0
+      ? 'scan'
+      : hasSignal
+        ? `${Math.round(pct.pct)}%`
+        : '--';
+    return `${providerMenuBarLabel(provider)} ${value}`;
+  });
+  if (h5Cost > 0) parts.push(h5CostLabel);
+  return parts.join(' · ');
+}
+
 function buildTrayTitle(state: AppState): string {
   const settings = state.settings ?? DEFAULT_SETTINGS;
   const display = settings.trayDisplay ?? 'h5pct';
@@ -601,9 +647,13 @@ function buildTrayTitle(state: AppState): string {
   const pctRows = enabledProviders.map(provider => trayH5Pct(state, provider));
   const h5Pct = Math.max(0, ...pctRows.map(row => row.pct));
   const provisionalOnly = pctRows.some(row => row.provisional) && h5Pct <= 0;
+  const h5CostLabel = settings.currency === 'KRW'
+    ? `₩${Math.round(h5Cost * (settings.usdToKrw ?? 1380)).toLocaleString()}`
+    : `$${h5Cost.toFixed(2)}`;
   switch (display) {
     case 'h5pct':
       if (provisionalOnly) return 'scan';
+      if (IS_MAC) return buildMacTrayTitle(state, h5CostLabel, h5Cost);
       return h5Pct > 0 ? `${Math.round(h5Pct)}%` : '';
     case 'tokens': {
       const t = h5Tokens;
@@ -630,7 +680,15 @@ function updateTray(state: AppState) {
   const costStr = settings.currency === 'KRW'
     ? `₩${Math.round(c * (settings.usdToKrw ?? 1380)).toLocaleString()}`
     : `$${c.toFixed(2)}`;
-  const tooltip = `WhereMyTokens  |  Today ${t.toLocaleString()} tok  ${costStr}`;
+  const h5Parts = settings.enabledProviders.map(provider => {
+    const pct = trayH5Pct(state, provider);
+    const hasSignal = trayH5HasSignal(state, provider);
+    const value = pct.provisional && pct.pct <= 0 ? 'scan' : hasSignal ? `${Math.round(pct.pct)}%` : '--';
+    return `${providerMenuBarLabel(provider)} ${value}`;
+  });
+  const tooltip = IS_MAC
+    ? `WhereMyTokens  |  ${h5Parts.join('  |  ')}  |  Today ${t.toLocaleString()} tok  ${costStr}`
+    : `WhereMyTokens  |  Today ${t.toLocaleString()} tok  ${costStr}`;
   if (tooltip !== lastTrayTooltip) {
     tray.setToolTip(tooltip);
     lastTrayTooltip = tooltip;
