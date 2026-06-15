@@ -1,6 +1,10 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import {
+  ClaudeCredentialsFile,
+  readClaudeCredentials,
+  readClaudeRefreshCredentials,
+  ResolvedClaudeCredentials,
+  writeClaudeCredentialsAtomic,
+} from './claudeCredentials';
 
 const TOKEN_URL = 'https://platform.claude.com/v1/oauth/token';
 const CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
@@ -54,15 +58,7 @@ export interface OAuthCredentialFileState extends OAuthCredentialState {
   size: number | null;
 }
 
-interface CredentialsFile {
-  claudeAiOauth?: {
-    accessToken?: unknown;
-    refreshToken?: unknown;
-    expiresAt?: unknown;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-}
+type CredentialsFile = ClaudeCredentialsFile;
 
 type PostForm = (
   url: string,
@@ -92,45 +88,12 @@ export function initOAuthRefresh(store: OAuthRefreshStore): void {
   memoryCooldown = readPersistedCooldown();
 }
 
-function credentialsPath(): string {
-  const configDir = process.env.CLAUDE_CONFIG_DIR;
-  return path.join(configDir && configDir.trim() ? configDir : path.join(os.homedir(), '.claude'), '.credentials.json');
-}
-
-function readCredentialsFile(): CredentialsFile | null {
-  try {
-    return JSON.parse(fs.readFileSync(credentialsPath(), 'utf-8')) as CredentialsFile;
-  } catch {
-    return null;
-  }
+function readCredentialsFile(): ResolvedClaudeCredentials | null {
+  return readClaudeCredentials();
 }
 
 export function writeCredentialsAtomic(updated: CredentialsFile): void {
-  const target = credentialsPath();
-  const tmp = `${target}.tmp.${process.pid}`;
-  let fd: number | null = null;
-
-  try {
-    fd = fs.openSync(tmp, 'w', 0o600);
-    fs.writeFileSync(fd, JSON.stringify(updated, null, 2), 'utf-8');
-    fs.fsyncSync(fd);
-    fs.closeSync(fd);
-    fd = null;
-    fs.renameSync(tmp, target);
-  } finally {
-    if (fd !== null) {
-      try {
-        fs.closeSync(fd);
-      } catch {
-        // Preserve the original failure.
-      }
-    }
-    try {
-      if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
-    } catch {
-      // Best effort cleanup.
-    }
-  }
+  writeClaudeCredentialsAtomic(updated);
 }
 
 function killSwitchEngaged(): boolean {
@@ -148,15 +111,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function currentCredentialMarker(): string | null {
-  const state = getOAuthCredentialFileState();
-  if (!state.hasCredentials) return null;
-  return [
-    state.mtimeMs ?? 'no-mtime',
-    state.size ?? 'no-size',
-    state.expiresAt ?? 'no-expiry',
-    state.hasAccessToken ? 'access' : 'no-access',
-    state.hasRefreshToken ? 'refresh' : 'no-refresh',
-  ].join(':');
+  return readCredentialsFile()?.marker ?? null;
 }
 
 function normalizeCooldown(value: unknown): OAuthRefreshCooldown | null {
@@ -295,8 +250,8 @@ function recordHttp429Cooldown(serverMessage: string | undefined, serverRetryAft
   };
 }
 
-export function getOAuthCredentialState(): OAuthCredentialState {
-  const cred = readCredentialsFile();
+function credentialStateFromResolved(resolved: ResolvedClaudeCredentials | null): OAuthCredentialState {
+  const cred = resolved?.credentials;
   const oauth = cred?.claudeAiOauth;
   const accessToken = oauth?.accessToken;
   const refreshToken = oauth?.refreshToken;
@@ -316,18 +271,17 @@ export function getOAuthCredentialState(): OAuthCredentialState {
   };
 }
 
+export function getOAuthCredentialState(): OAuthCredentialState {
+  return credentialStateFromResolved(readCredentialsFile());
+}
+
 export function getOAuthCredentialFileState(): OAuthCredentialFileState {
-  const state = getOAuthCredentialState();
-  let mtimeMs: number | null = null;
-  let size: number | null = null;
-  try {
-    const stat = fs.statSync(credentialsPath());
-    mtimeMs = stat.mtimeMs;
-    size = stat.size;
-  } catch {
-    // Credential parsing above remains the source of truth.
-  }
-  return { ...state, mtimeMs, size };
+  const resolved = readCredentialsFile();
+  return {
+    ...credentialStateFromResolved(resolved),
+    mtimeMs: resolved?.fileStat.mtimeMs ?? null,
+    size: resolved?.fileStat.size ?? null,
+  };
 }
 
 export function getOAuthCredentialMarker(): string | null {
@@ -362,8 +316,9 @@ export async function refreshNow(userAgent: string, _trigger = 'unknown'): Promi
 }
 
 async function doRefresh(userAgent: string): Promise<RefreshAttemptResult> {
-  const cred = readCredentialsFile();
-  const startingMarker = currentCredentialMarker();
+  const resolved = readClaudeRefreshCredentials();
+  const cred = resolved?.credentials;
+  const startingMarker = resolved?.marker ?? currentCredentialMarker();
   const oauth = cred?.claudeAiOauth;
   const refreshToken = oauth?.refreshToken;
   if (!cred || !oauth || typeof refreshToken !== 'string' || refreshToken.length === 0) {
@@ -433,7 +388,7 @@ async function doRefresh(userAgent: string): Promise<RefreshAttemptResult> {
   const expiresAt = Date.now() + parsed.expires_in * 1000;
   const latestMarker = currentCredentialMarker();
   if (startingMarker && latestMarker && latestMarker !== startingMarker) {
-    const latest = readCredentialsFile();
+    const latest = readCredentialsFile()?.credentials;
     const latestOauth = latest?.claudeAiOauth;
     const latestAccessToken = latestOauth?.accessToken;
     const latestExpiresAt = latestOauth?.expiresAt;
@@ -463,7 +418,7 @@ async function doRefresh(userAgent: string): Promise<RefreshAttemptResult> {
     },
   };
   try {
-    writeCredentialsAtomic(updated);
+    writeClaudeCredentialsAtomic(updated, resolved?.source ?? null);
   } catch {
     return { outcome: { kind: 'write-failed' }, networkAttempted: true, httpStatus: resp.status };
   }
