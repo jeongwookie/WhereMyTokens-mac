@@ -4,8 +4,8 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import chokidar from 'chokidar';
+import { liveSessionFilePath } from '../shared/platformPaths';
 
 export interface LiveSessionData {
   rate_limits?: {
@@ -21,9 +21,7 @@ export interface LiveSessionData {
   _ts?: number;
 }
 
-const LIVE_SESSION_FILE = path.join(
-  os.homedir(), 'AppData', 'Roaming', 'WhereMyTokens', 'live-session.json'
-);
+const LIVE_SESSION_FILE = liveSessionFilePath();
 
 export class BridgeWatcher {
   private watcher: chokidar.FSWatcher | null = null;

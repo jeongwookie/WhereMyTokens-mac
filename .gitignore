@@ -5,6 +5,7 @@ assets/screenshot.png
 assets/icon.png
 assets/icon-128.png
 assets/icon-256.png
+assets/icon.icns
 *.log
 *.html
 gitleaks-report*.json
