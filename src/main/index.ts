@@ -581,13 +581,17 @@ function providerMenuBarLabel(provider: ProviderId): string {
   return `${provider} 5h`;
 }
 
-function trayH5HasSignal(state: AppState, provider: ProviderId): boolean {
+function formatTrayTokens(tokens: number): string {
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+  if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(0)}K`;
+  return tokens > 0 ? String(tokens) : '';
+}
+
+function trayH5HasQuotaSignal(state: AppState, provider: ProviderId): boolean {
   const quota = state.providerQuotas[provider];
   for (const windowKey of trayH5WindowKeys(state, provider)) {
     const window = quotaWindow(state, provider, windowKey);
-    const stats = usageWindow(state, provider, windowKey);
     if (window && (window.pct > 0 || window.resetMs != null || !!window.resetLabel || !!window.source)) return true;
-    if (stats && (stats.totalTokens > 0 || stats.requestCount > 0 || stats.costUSD > 0)) return true;
   }
   for (const model of quota?.models ?? []) {
     if (isFiveHourDuration(model.durationMs)) return true;
@@ -619,17 +623,20 @@ function trayH5Pct(state: AppState, provider: ProviderId): { pct: number; provis
   return { pct, provisional };
 }
 
+function trayH5ProviderValue(state: AppState, provider: ProviderId): string {
+  const pct = trayH5Pct(state, provider);
+  if (pct.provisional && pct.pct <= 0) return 'scan';
+  if (trayH5HasQuotaSignal(state, provider)) return `${Math.round(pct.pct)}%`;
+
+  const stats = trayH5Stats(state, provider);
+  const tokenLabel = stats ? formatTrayTokens(stats.totalTokens) : '';
+  return tokenLabel || '--';
+}
+
 function buildMacTrayTitle(state: AppState, h5CostLabel: string, h5Cost: number): string {
   const settings = state.settings ?? DEFAULT_SETTINGS;
   const parts = settings.enabledProviders.map(provider => {
-    const pct = trayH5Pct(state, provider);
-    const hasSignal = trayH5HasSignal(state, provider);
-    const value = pct.provisional && pct.pct <= 0
-      ? 'scan'
-      : hasSignal
-        ? `${Math.round(pct.pct)}%`
-        : '--';
-    return `${providerMenuBarLabel(provider)} ${value}`;
+    return `${providerMenuBarLabel(provider)} ${trayH5ProviderValue(state, provider)}`;
   });
   if (h5Cost > 0) parts.push(h5CostLabel);
   return parts.join(' · ');
@@ -681,10 +688,7 @@ function updateTray(state: AppState) {
     ? `₩${Math.round(c * (settings.usdToKrw ?? 1380)).toLocaleString()}`
     : `$${c.toFixed(2)}`;
   const h5Parts = settings.enabledProviders.map(provider => {
-    const pct = trayH5Pct(state, provider);
-    const hasSignal = trayH5HasSignal(state, provider);
-    const value = pct.provisional && pct.pct <= 0 ? 'scan' : hasSignal ? `${Math.round(pct.pct)}%` : '--';
-    return `${providerMenuBarLabel(provider)} ${value}`;
+    return `${providerMenuBarLabel(provider)} ${trayH5ProviderValue(state, provider)}`;
   });
   const tooltip = IS_MAC
     ? `WhereMyTokens  |  ${h5Parts.join('  |  ')}  |  Today ${t.toLocaleString()} tok  ${costStr}`
