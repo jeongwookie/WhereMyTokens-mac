@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-import { parseWindowsProcessCandidates } from '../dist/main/providers/antigravity/processFinder.js';
+import {
+  parsePosixListeningPorts,
+  parsePosixProcessCandidates,
+  parseWindowsProcessCandidates,
+} from '../dist/main/providers/antigravity/processFinder.js';
 
 test('Antigravity process finder parses Windows CIM JSON arrays and filters unrelated processes', () => {
   const rows = [
@@ -52,11 +56,39 @@ test('Antigravity process finder accepts absolute Antigravity app data paths', (
   assert.equal(candidate[0].extensionPort, 34567);
 });
 
+test('Antigravity process finder parses macOS ps output with Application Support paths', () => {
+  const stdout = [
+    ' 401 /Applications/Antigravity.app/Contents/Resources/app/bin/language_server_macos_arm --csrf_token mac-secret --app_data_dir /Users/example/Library/Application Support/Antigravity --extension_server_port 45678 --server_port=45679 --workspace_id mac-ws',
+    ' 402 /usr/bin/other --csrf_token nope --app_data_dir /tmp/other --extension_server_port 11111',
+  ].join('\n');
+
+  const candidates = parsePosixProcessCandidates(stdout);
+
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0].pid, 401);
+  assert.equal(candidates[0].csrfToken, 'mac-secret');
+  assert.equal(candidates[0].extensionPort, 45678);
+  assert.equal(candidates[0].serverPort, 45679);
+  assert.equal(candidates[0].workspaceId, 'mac-ws');
+});
+
+test('Antigravity process finder parses lsof listening ports', () => {
+  const ports = parsePosixListeningPorts([
+    'p401',
+    'n127.0.0.1:45678',
+    'n*:45679',
+    'n[::1]:45678',
+  ].join('\n'));
+
+  assert.deepEqual(ports, [45678, 45679]);
+});
+
 test('Antigravity process finder threads a discovery timeout through process and port probes', () => {
   const source = fs.readFileSync('src/main/providers/antigravity/processFinder.ts', 'utf8');
 
   assert.match(source, /function remainingTimeoutMs\(stopAt: number, maxMs: number\)/);
   assert.match(source, /findWindowsProcessCandidates\(remainingTimeoutMs\(stopAt, 15_000\)\)/);
+  assert.match(source, /findPosixProcessCandidates\(remainingTimeoutMs\(stopAt, 15_000\)\)/);
   assert.match(source, /findWorkingPort\(candidate, stopAt\)/);
   assert.match(source, /testPortWithProtocol\(port, candidate\.csrfToken, 'http', remainingTimeoutMs\(stopAt, 3_000\)\)/);
   assert.match(source, /testPortWithProtocol\(port, candidate\.csrfToken, 'https', remainingTimeoutMs\(stopAt, 3_000\)\)/);
