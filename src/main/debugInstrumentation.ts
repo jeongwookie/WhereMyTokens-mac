@@ -1,12 +1,12 @@
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import * as v8 from 'v8';
 import { EventEmitter } from 'events';
+import { whereMyTokensLogDir } from '../shared/platformPaths';
 
 const DEBUG_ENV_KEY = 'WMT_DEBUG_INSTRUMENTATION';
 const DEBUG_FLAG = '--enable-debug-instrumentation';
-const DEFAULT_LOG_DIR = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'WhereMyTokens');
+const DEFAULT_LOG_DIR = whereMyTokensLogDir();
 const CRASH_LOG_PATH = path.join(DEFAULT_LOG_DIR, 'crash.log');
 const MEMORY_LOG_PATH = path.join(DEFAULT_LOG_DIR, 'debug-mem.jsonl');
 const MAX_LOG_BYTES = 50 * 1024 * 1024;
