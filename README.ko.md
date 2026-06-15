@@ -192,7 +192,7 @@ WhereMyTokens는 로컬 파일을 읽고, 활성화된 경우 본인 계정의 p
 | `~/.codex/auth.json` | Codex 사용량 snapshot 조회에만 쓰는 ChatGPT OAuth 정보. 앱 storage에 복사하거나 로그로 남기지 않습니다. |
 | Antigravity local RPC | 실행 중인 Antigravity IDE의 language server에서 세션, 모델 quota, generator metadata를 읽습니다. Google OAuth, refresh token, Google cloud usage endpoint, 오프라인 DB fallback은 사용하지 않습니다. |
 | `~/Library/Application Support/WhereMyTokens/live-session.json` | Claude Code `statusLine` bridge가 쓰는 로컬 bridge snapshot. |
-| Electron app data (`~/Library/Application Support/WhereMyTokens`) | 앱 설정, 로컬 캐시, 알림 기록, usage ledger, bridge 상태. |
+| Electron app data (`~/Library/Application Support/WhereMyTokens`) | 앱 설정, 로컬 캐시, 알림 기록, `usage-ledger.json`, `git-output-ledger.json`, bridge 상태. |
 
 자격 증명 처리는 좁게 제한되어 있습니다. WhereMyTokens는 공식 CLI의 로컬 credential 파일을 읽고, API key를 직접 입력받지 않으며, 별도 credential 백업을 저장하지 않습니다. Claude access token이 만료되면 Anthropic을 통해 refresh하고 갱신된 credentials를 `~/.claude/.credentials.json`에 원자적으로 다시 쓸 수 있습니다.
 
