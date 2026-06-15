@@ -46,8 +46,8 @@ function parseJsonArray(stdout: string): unknown[] {
 
 function extractFlag(commandLine: string, flag: string): string | null {
   const escaped = flag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = commandLine.match(new RegExp(`${escaped}(?:=|\\s+)(?:"([^"]+)"|'([^']+)'|([^\\s"']+))`, 'i'));
-  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
+  const match = commandLine.match(new RegExp(`${escaped}(?:=|\\s+)(?:"([^"]+)"|'([^']+)'|([^"']*?)(?=\\s+--[A-Za-z0-9_-]+(?:=|\\s)|$))`, 'i'));
+  return (match?.[1] ?? match?.[2] ?? match?.[3] ?? null)?.trim() || null;
 }
 
 function isAntigravityAppDataDir(value: string | null): boolean {
@@ -98,6 +98,29 @@ export function parseWindowsProcessCandidates(stdout: string): ProcessCandidate[
   return candidates;
 }
 
+export function parsePosixProcessCandidates(stdout: string): ProcessCandidate[] {
+  const candidates: ProcessCandidate[] = [];
+  for (const line of stdout.split(/\r?\n/)) {
+    const match = line.match(/^\s*(\d+)\s+(.+)$/);
+    if (!match) continue;
+    const pid = Number(match[1]);
+    const commandLine = match[2] ?? '';
+    if (!pid || !commandLine || !isAntigravityCommandLine(commandLine)) continue;
+
+    const csrfToken = extractFlag(commandLine, '--csrf_token');
+    if (!csrfToken) continue;
+
+    candidates.push({
+      pid,
+      extensionPort: Number(extractFlag(commandLine, '--extension_server_port') ?? 0),
+      serverPort: Number(extractFlag(commandLine, '--server_port') ?? 0),
+      csrfToken,
+      workspaceId: extractFlag(commandLine, '--workspace_id') ?? undefined,
+    });
+  }
+  return candidates;
+}
+
 async function findWindowsProcessCandidates(timeoutMs = 15_000): Promise<ProcessCandidate[]> {
   const name = processName();
   const primary = `
@@ -122,8 +145,31 @@ async function findWindowsProcessCandidates(timeoutMs = 15_000): Promise<Process
   }
 }
 
-async function getListeningPorts(pid: number, timeoutMs = 8_000): Promise<number[]> {
-  if (process.platform !== 'win32') return [];
+async function findPosixProcessCandidates(timeoutMs = 15_000): Promise<ProcessCandidate[]> {
+  try {
+    const { stdout } = await execFileAsync(
+      'ps',
+      ['-axo', 'pid=,command='],
+      { timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 },
+    );
+    return parsePosixProcessCandidates(stdout);
+  } catch {
+    return [];
+  }
+}
+
+export function parsePosixListeningPorts(stdout: string): number[] {
+  const ports = new Set<number>();
+  for (const line of stdout.split(/\r?\n/)) {
+    if (!line.startsWith('n')) continue;
+    const match = line.match(/:(\d+)(?:->.*)?$/);
+    const port = match ? Number(match[1]) : 0;
+    if (Number.isInteger(port) && port > 0 && port <= 65535) ports.add(port);
+  }
+  return [...ports].sort((a, b) => a - b);
+}
+
+async function getWindowsListeningPorts(pid: number, timeoutMs = 8_000): Promise<number[]> {
   const script = `
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
     $p = Get-NetTCPConnection -State Listen -OwningProcess ${pid} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty LocalPort;
@@ -137,6 +183,25 @@ async function getListeningPorts(pid: number, timeoutMs = 8_000): Promise<number
   } catch {
     return [];
   }
+}
+
+async function getPosixListeningPorts(pid: number, timeoutMs = 8_000): Promise<number[]> {
+  try {
+    const { stdout } = await execFileAsync(
+      'lsof',
+      ['-Pan', '-p', String(pid), '-iTCP', '-sTCP:LISTEN', '-Fn'],
+      { timeout: timeoutMs, maxBuffer: 1024 * 1024 },
+    );
+    return parsePosixListeningPorts(stdout);
+  } catch {
+    return [];
+  }
+}
+
+async function getListeningPorts(pid: number, timeoutMs = 8_000): Promise<number[]> {
+  if (process.platform === 'win32') return getWindowsListeningPorts(pid, timeoutMs);
+  if (process.platform === 'darwin' || process.platform === 'linux') return getPosixListeningPorts(pid, timeoutMs);
+  return [];
 }
 
 async function testPortWithProtocol(port: number, csrfToken: string, protocol: 'http' | 'https', timeoutMs = 3_000): Promise<boolean> {
@@ -200,7 +265,9 @@ async function findWorkingPort(candidate: ProcessCandidate, stopAt: number): Pro
 
 export async function findAntigravityServersUncached(timeoutMs = 15_000): Promise<AntigravityServerInfo[]> {
   const stopAt = Date.now() + Math.max(1, timeoutMs);
-  const candidates = process.platform === 'win32' ? await findWindowsProcessCandidates(remainingTimeoutMs(stopAt, 15_000)) : [];
+  const candidates = process.platform === 'win32'
+    ? await findWindowsProcessCandidates(remainingTimeoutMs(stopAt, 15_000))
+    : await findPosixProcessCandidates(remainingTimeoutMs(stopAt, 15_000));
   const servers: AntigravityServerInfo[] = [];
 
   for (const candidate of candidates) {
