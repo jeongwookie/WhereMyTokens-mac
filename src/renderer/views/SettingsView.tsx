@@ -384,7 +384,7 @@ export default function SettingsView({ settings, providerQuotas, onSave, onBack 
 
         <SectionHeader label="General" />
         <div style={row}>
-          <span style={labelStyle}>Start with Windows</span>
+          <span style={labelStyle}>Start at login</span>
           <input type="checkbox" style={chk} checked={s.openAtLogin} onChange={e => setS({ ...s, openAtLogin: e.target.checked })} />
         </div>
         <div style={row}>

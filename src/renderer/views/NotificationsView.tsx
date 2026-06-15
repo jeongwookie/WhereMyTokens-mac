@@ -82,7 +82,7 @@ export default function NotificationsView({ onBack }: Props) {
         <div style={row}>
           <div>
             <div style={labelStyle}>Enable usage alerts</div>
-            <div style={sub}>Send Windows notifications when a tracked limit reaches a threshold</div>
+            <div style={sub}>Send system notifications when a tracked limit reaches a threshold</div>
           </div>
           <input
             type="checkbox"
