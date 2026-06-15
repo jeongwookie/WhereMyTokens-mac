@@ -1,0 +1,86 @@
+{
+  "name": "wheremytokens-win",
+  "version": "1.18.2",
+  "description": "Windows system tray app for monitoring Claude Code, Codex, and Antigravity token usage in real time",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build:main": "tsc",
+    "build:renderer": "node scripts/build-renderer.mjs",
+    "build": "node scripts/make-icons.mjs && npm run build:main && npm run build:renderer",
+    "test": "npm run build:main && node --test scripts/session-metadata.test.mjs scripts/git-stats-keys.test.mjs scripts/git-stats-daily.test.mjs scripts/git-output-ledger.test.mjs scripts/refresh-scheduler.test.mjs scripts/state-readiness.test.mjs scripts/startup-state-snapshot.test.mjs scripts/integration.test.mjs scripts/jsonl-summary.test.mjs scripts/provider-settings.test.mjs scripts/antigravity-process-finder.test.mjs scripts/antigravity-ls-client.test.mjs scripts/antigravity-quota-parser.test.mjs scripts/antigravity-session-parser.test.mjs scripts/antigravity-gm-parser.test.mjs scripts/antigravity-usage-cache-store.test.mjs scripts/antigravity-gm-tracker.test.mjs scripts/antigravity-provider-integration.test.mjs scripts/antigravity-privacy.test.mjs scripts/generic-provider-single-scan.test.mjs scripts/compact-widget-sizing.test.mjs scripts/quota-display-groups.test.mjs scripts/provider-registry.test.mjs scripts/provider-state-assembly.test.mjs scripts/provider-state-runtime.test.mjs scripts/provider-usage-shape.test.mjs scripts/usage-alert-manager.test.mjs scripts/usage-ledger-aggregates.test.mjs scripts/usage-ledger-store.test.mjs scripts/usage-ledger-importer.test.mjs scripts/usage-ledger-generic-ingest.test.mjs scripts/usage-ledger-usage.test.mjs scripts/usage-ledger-state.test.mjs scripts/trend-section.test.mjs scripts/main-section-visibility.test.mjs scripts/usage-ledger-rebuild-ui.test.mjs scripts/rate-limit-fetcher.test.mjs scripts/oauth-refresh.test.mjs scripts/codex-usage-fetcher.test.mjs scripts/stability-regressions.test.mjs",
+    "start": "npm run build && electron .",
+    "dev": "concurrently \"tsc -w\" \"wait-on dist/main/index.js && npm run build:renderer && electron .\"",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
+  },
+  "keywords": [],
+  "author": "jeongwook",
+  "license": "MIT",
+  "type": "commonjs",
+  "build": {
+    "appId": "com.jeongwook.wheremytokens",
+    "productName": "WhereMyTokens",
+    "icon": "assets/icon.ico",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "forceCodeSigning": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "runAfterFinish": true,
+      "displayLanguageSelector": true,
+      "installerLanguages": [
+        "en_US",
+        "ko_KR",
+        "ja_JP",
+        "zh_CN",
+        "es_ES"
+      ],
+      "license": "assets/license.txt"
+    },
+    "extraResources": [
+      {
+        "from": "dist/bridge",
+        "to": "bridge"
+      }
+    ],
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "!assets/screenshot*.png",
+      "node_modules/**/*"
+    ]
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/noto-sans": "^5.2.10",
+    "@fontsource/noto-sans-jp": "^5.2.9",
+    "@fontsource/noto-sans-kr": "^5.2.9",
+    "chokidar": "^3.6.0",
+    "electron-store": "^8.2.0",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.2.1",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
+    "esbuild": "^0.28.0",
+    "jimp": "^0.22.12",
+    "typescript": "^6.0.2",
+    "wait-on": "^9.0.4"
+  }
+}
