@@ -5,7 +5,7 @@
 <h1 align="center">WhereMyTokens</h1>
 
 <p align="center">
-  <strong>Claude Code, Codex, and Antigravity token usage, live in your Windows tray.</strong>
+  <strong>Claude Code, Codex, and Antigravity token usage, live in your macOS menu bar.</strong>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img alt="Windows 10/11" src="https://img.shields.io/badge/Windows-10%2F11-0078d4?style=for-the-badge">
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-menu_bar-000000?style=for-the-badge">
   <img alt="Release" src="https://img.shields.io/github/v/release/jeongwookie/WhereMyTokens?style=for-the-badge">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge">
 </p>
@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/jeongwookie/WhereMyTokens/releases/download/v1.18.2/WhereMyTokens-Setup.exe"><strong>Download v1.18.2</strong></a>
+  <a href="#install-from-source"><strong>Build the macOS app</strong></a>
   ·
   <a href="#features">Features</a>
   ·
@@ -38,7 +38,7 @@
 </p>
 
 <p align="center">
-  A local-first Windows tray app for monitoring Claude Code, Codex, and Antigravity tokens, costs, sessions, cache, model usage, and rate limits at a glance.
+  A local-first macOS menu bar app for monitoring Claude Code, Codex, and Antigravity tokens, costs, sessions, cache, model usage, and rate limits at a glance.
 </p>
 
 <a id="screenshots"></a>
@@ -74,23 +74,16 @@
 
 ---
 
-## Download
+## macOS Build
 
-**[⬇ Download Installer (.exe)](https://github.com/jeongwookie/WhereMyTokens/releases/download/v1.18.2/WhereMyTokens-Setup.exe)** - just run and done
+This branch is the macOS port. Build a local `.app`, `.dmg`, or `.zip` from source:
 
-**[⬇ Download Portable ZIP](https://github.com/jeongwookie/WhereMyTokens/releases/download/v1.18.2/WhereMyTokens-v1.18.2-win-x64.zip)** - no install required
+```bash
+npm install
+npm run dist:mac
+```
 
-By downloading or installing, you agree to the [End-User License Agreement (EULA)](EULA.txt).
-
-**Option A — Installer** _(recommended)_
-1. Download `WhereMyTokens-Setup.exe` (link above)
-2. Run the installer and follow the wizard
-3. The app opens automatically and sits in your system tray
-
-**Option B — Portable ZIP** _(no install required)_
-1. Download `WhereMyTokens-v1.18.2-win-x64.zip` from the release page
-2. Extract the zip anywhere
-3. Run `WhereMyTokens.exe`
+By building or installing, you agree to the [End-User License Agreement (EULA)](EULA.txt).
 
 ---
 
@@ -110,7 +103,7 @@ By downloading or installing, you agree to the [End-User License Agreement (EULA
 - **Per-target quota display** — each provider window or model target can be shown as Rich, Simple, or hidden in Settings; this affects Plan Usage and the floating widget only
 - **Quota Pace view** — compares used quota % with elapsed window %; yellow/red means usage pace is ahead of the reset window
 - **Claude Code bridge** — register as a `statusLine` plugin for live rate limit data without API polling
-- **Windows toast notifications** — at configurable usage thresholds (50% / 80% / 90%)
+- **System notifications** — at configurable usage thresholds (50% / 80% / 90%)
 - **Claude Extra Usage budget** — Claude monthly credits used / limit / utilization %
 
 ### Analytics & Activity
@@ -137,17 +130,17 @@ By downloading or installing, you agree to the [End-User License Agreement (EULA
 - **Auto/Light/Dark theme** — follows system preference by default
 - **Cost display** — USD or KRW with configurable exchange rate
 - **Floating usage widget** — compact Quota Pace window with always-on-top support; show/hide it from the main header, tray menu, Settings, or widget controls. Waiting animations are off by default and can be re-enabled in Settings
-- **Tray label** — show usage %, token count, or cost directly in the taskbar
+- **Menu bar label** — show usage %, token count, or cost directly in the macOS menu bar
 - **Dashboard layout** — reorder cards and hide cards you do not need
 - **Project management** — hide or fully exclude projects from tracking
-- **Start with Windows** — optional auto-launch at login
+- **Start at login** — optional auto-launch at login
 
 ---
 
 ## Quick Start
 
 ### 1. Open the dashboard
-Click the tray icon (or press the global shortcut `Ctrl+Shift+D`).
+Click the menu bar icon (or press the global shortcut `Ctrl+Shift+D`).
 
 ### 2. Connect Claude Code bridge (optional)
 **Settings → Claude Code Integration → Setup** — enables live rate limit data without API polling.
@@ -157,7 +150,7 @@ Click the tray icon (or press the global shortcut `Ctrl+Shift+D`).
 - **Currency** — USD or KRW
 - **Alerts** — set usage thresholds (50% / 80% / 90%)
 - **Theme** — Auto (follows system) / Light / Dark
-- **Tray label** — choose what to display in the taskbar
+- **Menu bar label** — choose what to display in the menu bar
 - **Main Layout** — reorder dashboard cards or hide optional cards
 - **Data -> Rebuild ledger** — reset and replay the aggregate usage ledger from local history if you need to repair totals
 - **Floating usage widget** — enable the compact Quota Pace window; use the main header toggle or tray menu to show or hide it later
@@ -166,25 +159,25 @@ Click the tray icon (or press the global shortcut `Ctrl+Shift+D`).
 
 ## Architecture
 
-WhereMyTokens is a local-first Electron tray app. The renderer never reads local files or credentials directly; all filesystem, provider API, tray, and settings work stays in the Electron main process and is exposed through the preload bridge.
+WhereMyTokens is a local-first Electron menu bar app. The renderer never reads local files or credentials directly; all filesystem, provider API, menu bar, and settings work stays in the Electron main process and is exposed through the preload bridge.
 
 | Layer | Responsibility |
 |-------|----------------|
 | Electron main | Discovers Claude/Codex/Antigravity sessions, parses local usage sources, fetches provider usage, manages tray/window state, and persists app settings. |
 | Preload bridge | Exposes the typed `window.wmt` IPC surface while keeping `contextIsolation` boundaries intact. |
-| React renderer | Shows the tray dashboard, settings, notifications, activity charts, and the compact quota widget. |
+| React renderer | Shows the menu bar dashboard, settings, notifications, activity charts, and the compact quota widget. |
 | `statusLine` bridge | `src/bridge/bridge.ts` receives Claude Code JSON on stdin and writes a local bridge snapshot for the main process to watch. |
 
 | Data flow | Source | Destination | Network |
 |-----------|--------|-------------|---------|
 | Claude sessions | `~/.claude/sessions/*.json`, `~/.claude/projects/**/*.jsonl` | Main-process parser/cache, then renderer state | No |
-| Claude bridge | Claude Code `statusLine` stdin | `%APPDATA%\WhereMyTokens\live-session.json` | No |
+| Claude bridge | Claude Code `statusLine` stdin | `~/Library/Application Support/WhereMyTokens/live-session.json` | No |
 | Claude quota snapshot | `~/.claude/.credentials.json` OAuth token | Anthropic `/api/oauth/usage` | Yes, direct to Anthropic |
 | Codex sessions | `~/.codex/sessions/**/*.jsonl`, `~/.codex/archived_sessions/**/*.jsonl`, `~/.codex/session-cleanup-archive/**/*.jsonl` | Main-process parser/cache, then renderer state | No |
 | Codex quota snapshot | `~/.codex/auth.json` OAuth token | ChatGPT/Codex usage endpoint | Yes, direct to OpenAI/ChatGPT |
 | Antigravity sessions, model quota, and usage metadata | Running Antigravity language server on `127.0.0.1` | Main-process local RPC client, then renderer state | No external network |
-| Aggregate usage ledger | Local JSONL usage summaries | `%APPDATA%\WhereMyTokens\usage-ledger.json` | No |
-| Git output ledger | Local git scans | `%APPDATA%\WhereMyTokens\git-output-ledger.json` | No |
+| Aggregate usage ledger | Local JSONL usage summaries | Electron app data (`~/Library/Application Support/WhereMyTokens`) | No |
+| Git output ledger | Local git scans | Electron app data (`~/Library/Application Support/WhereMyTokens`) | No |
 
 Rate-limit precedence is provider-specific and is assembled into `AppState.providerQuotas`: Claude uses the Anthropic API first, then the `statusLine` bridge and cache; Codex uses live usage first, then cache and local `rate_limits` events from JSONL logs; Antigravity uses the running IDE language server's local RPC model quota data. API/Bridge/Cache/Log/Local RPC chips are renderer labels derived from the snapshot `source`, not separate state fields. Settings store provider enablement separately from quota display preferences. The `Providers` setting controls scanning, quota fetching, sessions, statistics, and alerts. `Quota display` stores only `Rich`, `Simple`, or `None` per target and affects Plan Usage and the floating widget only.
 
@@ -204,10 +197,8 @@ WhereMyTokens reads local files and, when enabled, makes direct provider usage r
 | `~/.codex/session-cleanup-archive/**/*.jsonl` | Codex session-cleanup archives included in all-time usage totals. |
 | `~/.codex/auth.json` | ChatGPT OAuth material used only for Codex usage snapshots; it is not logged or copied into app storage. |
 | Antigravity local language server on `127.0.0.1` | Sessions, per-model quota percentages, reset times, and token metadata while Antigravity IDE is running and signed in. |
-| `%APPDATA%\WhereMyTokens\live-session.json` | Local bridge snapshot written by the Claude Code `statusLine` bridge. |
-| `%APPDATA%\WhereMyTokens\usage-ledger.json` | Aggregated local usage ledger for long-range totals, trend buckets, and heatmaps. |
-| `%APPDATA%\WhereMyTokens\git-output-ledger.json` | Aggregated daily git output snapshots used by Code Output and Trend. |
-| Electron app data (`%APPDATA%\WhereMyTokens`) | App settings, local caches, notification history, and bridge state. |
+| `~/Library/Application Support/WhereMyTokens/live-session.json` | Local bridge snapshot written by the Claude Code `statusLine` bridge. |
+| Electron app data (`~/Library/Application Support/WhereMyTokens`) | App settings, local caches, notification history, usage ledgers, and bridge state. |
 
 Credential handling is intentionally narrow: WhereMyTokens reads provider credentials from the official local CLI files, does not ask you to paste API keys, does not store a separate credential backup, and redacts credential details from status output. If Claude's local access token expires, the app may refresh it through Anthropic and atomically write the updated credentials back to `~/.claude/.credentials.json`.
 
@@ -322,7 +313,7 @@ Click the **Details** button on any session row to expand activity by category. 
 
 ### Requirements
 
-- Windows 10 / 11
+- macOS
 - [Node.js](https://nodejs.org) 18+
 - [Claude Code](https://claude.ai/code) installed and logged in
 
@@ -336,15 +327,13 @@ npm run build
 npm start
 ```
 
-### Build installer
+### Build macOS app
 
 ```bash
-npm run dist
-# -> release/WhereMyTokens Setup x.x.x.exe  (NSIS installer)
-# -> release/WhereMyTokens x.x.x.exe         (portable)
+npm run dist:mac
+# -> release/WhereMyTokens-x.x.x-mac-*.dmg
+# -> release/WhereMyTokens-x.x.x-mac-*.zip
 ```
-
-> **Note:** Building the NSIS installer on Windows requires Developer Mode enabled (Settings → For Developers → Developer Mode). The portable `.exe` in `release/win-unpacked/` works without it.
 
 ---
 
