@@ -29,6 +29,7 @@ interface QuotaRowViewModel {
   tokens: number;
   pending: boolean;
   waiting: boolean;
+  hasQuotaSignal: boolean;
 }
 
 const noDrag = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;
@@ -69,6 +70,10 @@ function buildQuotaRows(state: AppState): QuotaRowViewModel[] {
 
   return widgetGroups.flatMap(group => group.rows.map(row => {
     const quotaPct = clampPct(row.quotaPct);
+    const hasQuotaSignal = row.quota.pct > 0
+      || row.quota.resetMs != null
+      || !!row.quota.resetLabel
+      || !!row.quota.source;
     return {
       key: row.key,
       provider: group.provider,
@@ -80,7 +85,8 @@ function buildQuotaRows(state: AppState): QuotaRowViewModel[] {
       costUSD: row.hideCost ? 0 : row.stats.costUSD,
       tokens: row.stats.totalTokens,
       pending: row.pending,
-      waiting: !row.pending && quotaPct <= 0 && row.resetMs == null && row.stats.totalTokens <= 0,
+      waiting: !row.pending && !hasQuotaSignal && row.stats.totalTokens <= 0,
+      hasQuotaSignal,
     };
   })).slice(0, 8);
 }
@@ -123,6 +129,7 @@ function statusText(row: QuotaRowViewModel | null): string {
   if (!row) return 'Waiting for quota data';
   if (row.pending) return `${row.title} ${row.label} is syncing`;
   if (row.waiting) return `${row.title} ${row.label} is waiting`;
+  if (!row.hasQuotaSignal && row.tokens > 0) return `${row.title} ${row.label} is using local token data`;
   const reset = formatReset(row.resetMs);
   return reset ? `${row.title} ${row.label} resets in ${reset}` : `${row.title} ${row.label}`;
 }
@@ -132,7 +139,13 @@ function topLine(rows: QuotaRowViewModel[], currency: string, usdToKrw: number):
   const scope = h5Rows.length > 0 ? h5Rows : rows.slice(0, 2);
   if (scope.length === 0) return '5h quota data is loading';
   const parts = scope.slice(0, 3).map(row => {
-    const value = row.pending ? 'scan' : row.waiting ? '--' : formatPct(row.quotaPct);
+    const value = row.pending
+      ? 'scan'
+      : row.hasQuotaSignal
+        ? formatPct(row.quotaPct)
+        : row.tokens > 0
+          ? fmtTokens(row.tokens)
+          : '--';
     return `${providerDisplayName(row.provider)} ${row.label} ${value}`;
   });
   const cost = scope.reduce((sum, row) => sum + row.costUSD, 0);
@@ -204,7 +217,13 @@ function PeriodToggle({ period, onPeriod }: { period: Period; onPeriod: (period:
 function QuotaRow({ row, currency, usdToKrw }: { row: QuotaRowViewModel; currency: string; usdToKrw: number }) {
   const C = useTheme();
   const color = row.pending || row.waiting ? C.textMuted : quotaPctBarColor(row.quotaPct, C);
-  const value = row.pending ? 'scan' : row.waiting ? 'waiting' : formatPct(row.quotaPct);
+  const value = row.pending
+    ? 'scan'
+    : row.hasQuotaSignal
+      ? formatPct(row.quotaPct)
+      : row.tokens > 0
+        ? fmtTokens(row.tokens)
+        : 'waiting';
   const reset = row.visualKind === 'percentOnly' ? '' : formatReset(row.resetMs);
   return (
     <div
@@ -225,11 +244,11 @@ function QuotaRow({ row, currency, usdToKrw }: { row: QuotaRowViewModel; currenc
         <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 700 }}>{row.label}{reset ? ` / ${reset}` : ''}</div>
       </div>
       <div style={{ height: 7, borderRadius: 999, background: C.bgCard, overflow: 'hidden', border: `1px solid ${C.borderSub}` }}>
-        <div style={{ width: row.pending || row.waiting ? '8%' : `${row.quotaPct}%`, height: '100%', borderRadius: 999, background: color }} />
+        <div style={{ width: row.pending || row.waiting || !row.hasQuotaSignal ? '8%' : `${row.quotaPct}%`, height: '100%', borderRadius: 999, background: color }} />
       </div>
       <div style={{ minWidth: 76, textAlign: 'right' }}>
         <div style={{ color, fontSize: 15, fontWeight: 900 }}>{value}</div>
-        <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 700 }}>{row.costUSD > 0 ? fmtCostShort(row.costUSD, currency, usdToKrw) : row.tokens > 0 ? fmtTokens(row.tokens) : ''}</div>
+        <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 700 }}>{row.costUSD > 0 ? fmtCostShort(row.costUSD, currency, usdToKrw) : row.hasQuotaSignal && row.tokens > 0 ? fmtTokens(row.tokens) : !row.hasQuotaSignal && row.tokens > 0 ? 'local' : ''}</div>
       </div>
     </div>
   );
@@ -348,7 +367,7 @@ export default function MacMenuBarPopoverView({
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 12, alignItems: 'center' }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8 }}>5h status</div>
-                <div style={{ marginTop: 4, color: C.text, fontSize: 22, fontWeight: 900 }}>{selected && !selected.waiting && !selected.pending ? formatPct(selected.quotaPct) : '--'}</div>
+                <div style={{ marginTop: 4, color: C.text, fontSize: 22, fontWeight: 900 }}>{selected && !selected.waiting && !selected.pending ? (selected.hasQuotaSignal ? formatPct(selected.quotaPct) : selected.tokens > 0 ? fmtTokens(selected.tokens) : '--') : '--'}</div>
                 <div title={statusText(selected)} style={{ marginTop: 2, color: C.textDim, fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {statusText(selected)}
                 </div>

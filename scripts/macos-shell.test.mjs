@@ -24,6 +24,19 @@ test('macOS popover keeps its scrollable body outside the drag region', () => {
   assert.match(source, /gridTemplateRows: 'auto 1fr auto',\s*minHeight: 0/s);
 });
 
+test('macOS menu bar does not show false 0 percent for local-only 5h usage', () => {
+  const main = fs.readFileSync('src/main/index.ts', 'utf8');
+  const popover = fs.readFileSync('src/renderer/views/MacMenuBarPopoverView.tsx', 'utf8');
+
+  assert.match(main, /function trayH5HasQuotaSignal/);
+  assert.match(main, /function formatTrayTokens/);
+  assert.match(main, /trayH5HasQuotaSignal\(state, provider\)/);
+  assert.match(main, /tokenLabel \|\| '--'/);
+  assert.doesNotMatch(main, /hasSignal\s*\?\s*`\$\{Math\.round\(pct\.pct\)\}%`/);
+  assert.match(popover, /hasQuotaSignal/);
+  assert.match(popover, /fmtTokens\(row\.tokens\)/);
+});
+
 test('main process pins Electron userData to the shared WhereMyTokens macOS path', () => {
   const source = fs.readFileSync('src/main/index.ts', 'utf8');
 
