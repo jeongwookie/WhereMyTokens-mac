@@ -7,10 +7,10 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
+import { liveSessionFilePath } from '../shared/platformPaths';
 
-const outDir = path.join(os.homedir(), 'AppData', 'Roaming', 'WhereMyTokens');
-const outFile = path.join(outDir, 'live-session.json');
+const outFile = liveSessionFilePath();
+const outDir = path.dirname(outFile);
 
 try { fs.mkdirSync(outDir, { recursive: true }); } catch { /* ignore */ }
 
