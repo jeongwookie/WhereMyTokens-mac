@@ -111,8 +111,13 @@ function rebuildTrayMenu() {
 }
 
 function createTray(): Tray {
-  const iconPath = path.join(__dirname, '../../assets/icon.ico');
-  const icon = nativeImage.createFromPath(iconPath);
+  const iconName = process.platform === 'darwin' ? 'icon.png' : 'icon.ico';
+  const iconPath = path.join(__dirname, '../../assets', iconName);
+  const loadedIcon = nativeImage.createFromPath(iconPath);
+  const icon = process.platform === 'darwin'
+    ? loadedIcon.resize({ width: 18, height: 18 })
+    : loadedIcon;
+  if (process.platform === 'darwin') icon.setTemplateImage(true);
   const t = new Tray(icon);
   t.setToolTip('WhereMyTokens');
   t.on('click', () => {
@@ -370,7 +375,10 @@ function resolvePopupBounds(trayBounds: Electron.Rectangle): Electron.Rectangle 
   const width = Math.min(POPUP_WIDTH, Math.max(240, workArea.width - POPUP_MARGIN * 2));
   const height = Math.min(POPUP_HEIGHT, Math.max(240, workArea.height - POPUP_MARGIN * 2));
   const preferredX = Math.round(trayCenter.x - width / 2);
-  const preferredY = Math.round(trayBounds.y - height - POPUP_MARGIN);
+  const trayIsNearTop = trayCenter.y <= workArea.y + workArea.height / 2;
+  const preferredY = trayIsNearTop
+    ? Math.round(trayBounds.y + trayBounds.height + POPUP_MARGIN)
+    : Math.round(trayBounds.y - height - POPUP_MARGIN);
   const maxX = workArea.x + Math.max(0, workArea.width - width);
   const maxY = workArea.y + Math.max(0, workArea.height - height);
   return {
@@ -671,6 +679,7 @@ function markPopupMoving() {
 
 app.whenReady().then(() => {
   app.setAppUserModelId('com.wheremytokens.app');
+  if (process.platform === 'darwin') app.dock?.hide();
   initOAuthRefresh(
     store as unknown as { get(key: string): unknown; set(key: string, value: unknown): void; delete(key: string): void },
   );
