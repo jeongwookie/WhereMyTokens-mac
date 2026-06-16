@@ -17,7 +17,7 @@
   <a href="README.md">English</a> · <a href="README.ko.md">한국어</a> · <a href="README.zh-CN.md">中文</a> · <a href="README.es.md">Español</a>
 </p>
 
-> This file is a macOS-port summary. The English and Korean READMEs are the canonical detailed documents for this branch.
+> This file is a macOS edition summary. The English and Korean READMEs are the canonical detailed documents.
 
 <a id="screenshots"></a>
 
@@ -40,11 +40,7 @@
 
 | バージョン | 日付 | 主な変更 |
 |------------|------|----------|
-| **[v1.18.2](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.2)** | 6/5 | Long Rich quota card title のレイアウト崩れを修正し、ellipsis と tooltip fallback を維持。 |
-| **[v1.18.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.1)** | 6/4 | Antigravity quota selection と pacing を安定化し、Partial History loop を防止。 |
-| **[v1.18.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.0)** | 6/2 | local-only Antigravity provider、local RPC quota/session scan、persisted usage cache を追加。 |
-| **[v1.17.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.17.0)** | 6/2 | Provider quota snapshot ベースで Plan Usage を再構成。 |
-| **[v1.16.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.16.1)** | 5/27 | Budgeted ledger warmup と stale provider completion marker 処理を改善。 |
+| **mac-v1.0.0** | 2026-06-17 | macOS release track の初回版。メニューバー、DMG/ZIP、macOS data paths、Claude/Codex/Antigravity tracking を追加。 |
 
 ## インストール
 
@@ -80,7 +76,7 @@ Generated artifacts:
 
 Current target: Apple Silicon (`arm64`). Add x64 or universal builds before distributing to Intel Mac users.
 
-## macOS ポートの設計
+## macOS 設計
 
 - Dock icon is hidden; the app behaves as a macOS menu bar utility.
 - The popup opens from the menu bar item and is clamped inside the active display.

@@ -30,9 +30,9 @@
   <a href="#privacy">Privacy</a>
 </p>
 
-WhereMyTokens lives in the macOS menu bar and opens a compact dashboard for local AI-coding usage: token totals, cost estimates, cache efficiency, quota windows, session status, model usage, activity charts, and git output metrics.
+WhereMyTokens lives in the macOS menu bar and opens a compact dashboard for local AI-coding usage: token totals, cost estimates, cache efficiency, quota reset periods, session status, model usage, activity charts, and git output metrics.
 
-This repository is the macOS port workspace. The original Windows app was imported as a baseline on `main`; active macOS work happens on `codex/dev-macos-port` and feature branches. Do not merge implementation work into `main` until the final review is complete.
+This repository ships the macOS edition of WhereMyTokens. The macOS release track is versioned independently and uses `mac-vX.Y.Z` GitHub release tags.
 
 <a id="screenshots"></a>
 
@@ -55,11 +55,7 @@ This repository is the macOS port workspace. The original Windows app was import
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| **[v1.18.2](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.2)** | Jun 5 | Fix long Rich quota card titles so Plan Usage columns stay aligned while keeping ellipsis and tooltip fallback. |
-| **[v1.18.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.1)** | Jun 4 | Stabilize Antigravity quota selection and pacing, prevent startup Partial History loops, mask account labels, and keep model token stats visible. |
-| **[v1.18.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.0)** | Jun 2 | Add local-only Antigravity provider support with process discovery, local RPC quota/session scanning, persisted usage cache, and provider ledger import. |
-| **[v1.17.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.17.0)** | Jun 2 | Refactor Plan Usage around provider quota snapshots, per-target display groups, and safer quota state migration. |
-| **[v1.16.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.16.1)** | May 27 | Keep budgeted ledger warmup running after truncated or failed full-history imports and avoid stale provider completion markers. |
+| **mac-v1.0.0** | Jun 17, 2026 | First macOS release track: menu bar app shell, DMG/ZIP packaging, macOS data paths, Claude/Codex/Antigravity usage tracking, and Claude Desktop credential discovery. |
 
 ## Install
 
@@ -131,7 +127,7 @@ The Claude bridge snapshot is written to:
 
 - Claude Code, Codex, and Antigravity provider checkboxes.
 - Provider adapters live under `src/main/providers/` so future providers can join the same quota/session/usage shape.
-- Rich quota cards for provider reset windows and model quota targets.
+- Rich quota cards for provider reset periods and model quota targets.
 - Cache efficiency, saved-cost estimates, and provider health chips.
 - Claude usage via Anthropic API, local `statusLine` bridge fallback, and cache fallback.
 - Codex usage via live usage endpoint, cache fallback, and local JSONL `rate_limits`.
@@ -155,14 +151,14 @@ The Claude bridge snapshot is written to:
 ### macOS Utilities
 
 - Menu bar label can show usage percent, token count, or cost.
-- Floating quota widget can stay above other windows.
+- Floating quota widget can stay above other apps.
 - Light, dark, and system-auto themes.
 - Start-at-login setting.
 - System notifications for quota thresholds.
 
 ## macOS Design
 
-The macOS port is not just the older desktop tray shell repackaged:
+The macOS app is designed as a native-feeling menu bar utility:
 
 | Area | Current decision |
 |------|------------------|
@@ -189,7 +185,7 @@ WhereMyTokens is local-first. It does not run a cloud sync service and does not 
 |------------------------|---------|
 | `~/.claude/sessions/*.json` | Claude session metadata. |
 | `~/.claude/projects/**/*.jsonl` | Claude token, cost, context, and activity summaries. |
-| `~/.claude/.credentials.json` | Claude OAuth material for Anthropic usage requests and token refresh. |
+| Claude Code credentials | Read from the standard Claude credentials file, macOS Keychain item, or an active Claude Desktop-launched Claude Code process when available. Used only for Anthropic usage requests. |
 | `~/.codex/sessions/**/*.jsonl` | Recent Codex session usage and tool activity. |
 | `~/.codex/archived_sessions/**/*.jsonl` | Archived Codex usage included in all-time totals. |
 | `~/.codex/session-cleanup-archive/**/*.jsonl` | Codex cleanup archives included in all-time totals. |
@@ -210,7 +206,7 @@ npm test
 npm run dist:mac
 ```
 
-Useful verification for the macOS port:
+Useful verification for the macOS edition:
 
 ```bash
 npm run dist:mac
@@ -235,4 +231,3 @@ Runtime smoke test checklist:
 - Add Developer ID signing and notarization before public distribution.
 - Review final app icon at Finder, Dock, Spotlight, and DMG sizes.
 - Verify first-run install copy and Gatekeeper behavior.
-- Confirm `main` has not received implementation merges before final owner review.

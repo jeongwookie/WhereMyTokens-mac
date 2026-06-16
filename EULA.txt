@@ -1,6 +1,6 @@
 WhereMyTokens -- End-User License Agreement (EULA)
 ====================================================
-Last updated: April 2026
+Last updated: June 2026
 
 PLEASE READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING WHEREMYTOKENS.
 BY INSTALLING, COPYING, OR OTHERWISE USING THE SOFTWARE, YOU AGREE TO BE
@@ -10,12 +10,12 @@ OR USE THE SOFTWARE.
 
 1. ABOUT THIS SOFTWARE
 ----------------------
-WhereMyTokens (the "Software") is a Windows system tray application that
-reads locally stored Claude Code session and usage files on your computer
-and displays token usage, costs, session activity, and rate-limit
-information in a dashboard. The Software is developed and maintained by an
-individual developer, jeongwookie (the "Author"), and is distributed free
-of charge as an open-source project.
+WhereMyTokens for macOS (the "Software") is a macOS menu bar application
+that reads locally stored Claude Code, Codex, and Antigravity usage data on
+your computer and displays token usage, costs, session activity, and
+rate-limit information in a dashboard. The Software is developed and
+maintained by an individual developer, jeongwookie (the "Author"), and is
+distributed free of charge as an open-source project.
 
 The Software is NOT affiliated with, endorsed by, sponsored by, or
 officially connected in any way with Anthropic, PBC or its products,
@@ -38,7 +38,7 @@ sell copies of the source code.
 
 This EULA is an additional agreement that governs your use of the
 compiled, pre-built binary distributions of the Software (for example,
-installers and portable executables downloaded from the Author's GitHub
+DMG images and ZIP app archives downloaded from the Author's GitHub
 Releases page), together with any accompanying documentation, icons, and
 branding assets.
 
@@ -98,11 +98,12 @@ The Software is designed with privacy as a core principle.
 
         - ~/.claude/sessions/*.json         (session metadata)
         - ~/.claude/projects/**/*.jsonl     (conversation logs)
-        - ~/.claude/.credentials.json       (OAuth token; see 5.3)
-        - %APPDATA%\WhereMyTokens\*         (local app data, including
-                                             live-session.json written by
-                                             the optional statusLine
-                                             bridge plugin)
+        - Claude credentials                (OAuth material; see 5.3)
+        - ~/.codex/**/*.jsonl               (Codex session and usage data)
+        - ~/Library/Application Support/WhereMyTokens/*
+                                           (local macOS app data, including
+                                            live-session.json written by
+                                            the optional statusLine bridge)
 
   5.2 FILES MODIFIED LOCALLY (OPT-IN)
       If -- and only if -- you explicitly enable the "Claude Code
@@ -112,12 +113,12 @@ The Software is designed with privacy as a core principle.
       This modification is reversible from within the Settings screen.
       The Software will not modify this file without your explicit action.
 
-      Additionally, if you enable "Launch at login," the Software will
-      register a standard Windows auto-start entry for the current user.
+      Additionally, if you enable "Start at login," the Software will
+      register itself as a standard macOS login item for the current user.
 
   5.3 ANTHROPIC API REQUESTS
-      If Anthropic credentials are present on your system in the location
-      referenced above, and you have not disabled rate-limit polling, the
+      If Anthropic credentials are discoverable on your system, and you
+      have not disabled rate-limit polling, the
       Software makes periodic HTTPS requests to Anthropic's usage API
       endpoint on your behalf using your own credentials, to retrieve
       your own rate-limit information. These requests are functionally
@@ -156,7 +157,7 @@ React, and various npm packages. Each third-party component is subject to
 its own license terms. A list of third-party components and their licenses
 is available in the Software's source repository at:
 
-  https://github.com/jeongwookie/WhereMyTokens
+  https://github.com/jeongwookie/WhereMyTokens-mac
 
 To the extent there is any conflict between a third-party open-source
 license and this EULA, the third-party license prevails with respect to
@@ -345,7 +346,7 @@ this Agreement distributed with it.
 -----------
 For questions, bug reports, or feature requests, please visit:
 
-  https://github.com/jeongwookie/WhereMyTokens/issues
+  https://github.com/jeongwookie/WhereMyTokens-mac/issues
 
 ---
 WhereMyTokens is an independent, open-source project. Thank you for

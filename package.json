@@ -1,6 +1,6 @@
 {
   "name": "wheremytokens-mac",
-  "version": "1.18.2",
+  "version": "1.0.0",
   "description": "macOS menu bar app for monitoring Claude Code, Codex, and Antigravity token usage in real time",
   "main": "dist/main/index.js",
   "scripts": {
@@ -26,14 +26,6 @@
     "directories": {
       "output": "release"
     },
-    "win": {
-      "icon": "assets/icon.ico",
-      "target": [
-        "nsis",
-        "portable"
-      ],
-      "forceCodeSigning": false
-    },
     "mac": {
       "icon": "assets/icon.icns",
       "target": [
@@ -44,21 +36,6 @@
     },
     "dmg": {
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": false,
-      "runAfterFinish": true,
-      "displayLanguageSelector": true,
-      "installerLanguages": [
-        "en_US",
-        "ko_KR",
-        "ja_JP",
-        "zh_CN",
-        "es_ES"
-      ],
-      "license": "assets/license.txt"
     },
     "extraResources": [
       {
