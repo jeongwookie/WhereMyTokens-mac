@@ -23,12 +23,13 @@ import SettingsView from './views/SettingsView';
 import NotificationsView from './views/NotificationsView';
 import HelpView from './views/HelpView';
 import CompactWidgetView from './views/CompactWidgetView';
+import MacMenuBarPopoverView from './views/MacMenuBarPopoverView';
 import RenderErrorBoundary from './components/RenderErrorBoundary';
 import { getTheme, applyThemeCssVars, Theme } from './theme';
 import { ThemeProvider } from './ThemeContext';
 import { DEFAULT_MAIN_SECTION_ORDER, normalizeHiddenMainSections, normalizeMainSectionOrder } from './mainSections';
 
-type View = 'main' | 'settings' | 'notifications' | 'help';
+type View = 'main' | 'dashboard' | 'settings' | 'notifications' | 'help';
 
 const EMPTY_WINDOW = { inputTokens:0, outputTokens:0, cacheCreationTokens:0, cacheReadTokens:0, totalTokens:0, costUSD:0, requestCount:0, cacheEfficiency:0, cacheSavingsUSD:0 };
 const EMPTY_BY_PROVIDER = {
@@ -749,7 +750,9 @@ function BootFallback({
 }
 
 export default function App() {
-  const isWidget = useMemo(() => new URLSearchParams(window.location.search).get('view') === 'widget', []);
+  const launchView = useMemo(() => new URLSearchParams(window.location.search).get('view'), []);
+  const isWidget = launchView === 'widget';
+  const isMacPopover = launchView === 'mac-popover';
   const [state, setState] = useState<AppState>(DEFAULT_STATE);
   const [view, setView] = useState<View>('main');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
@@ -825,9 +828,9 @@ export default function App() {
     return cleanup;
   }, [refresh, applyState]);
 
-  // widget 창은 transparent window이므로 body 배경을 투명하게
+  // widget/mac popover windows are transparent, so keep the document background clear.
   useEffect(() => {
-    if (!isWidget) return;
+    if (!isWidget && !isMacPopover) return;
     const root = document.getElementById('root');
     const previous = {
       htmlBackground: document.documentElement.style.background,
@@ -850,7 +853,7 @@ export default function App() {
       document.body.style.backgroundColor = previous.bodyBackgroundColor;
       if (root) root.style.background = previous.rootBackground;
     };
-  }, [isWidget]);
+  }, [isMacPopover, isWidget]);
 
   useEffect(() => {
     if (isWidget) return;
@@ -866,7 +869,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (view !== 'main') return;
+    if (view !== 'main' && view !== 'dashboard') return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -899,7 +902,7 @@ export default function App() {
 
   // 핵심 상태가 준비되면 스플래시를 닫고, 장시간 응답이 없으면 복구 화면으로 전환한다.
   useEffect(() => {
-    if (isWidget) {
+    if (isWidget || isMacPopover) {
       revealRoot();
       return;
     }
@@ -914,7 +917,7 @@ export default function App() {
       revealRoot();
     }, BOOT_FALLBACK_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [isWidget, state.initialRefreshComplete, revealRoot]);
+  }, [isMacPopover, isWidget, state.initialRefreshComplete, revealRoot]);
 
   async function handleSaveSettings(partial: Partial<AppSettings>) {
     const updated = await window.wmt.setSettings(partial);
@@ -942,6 +945,23 @@ export default function App() {
       <ThemeProvider value={theme}>
         <RenderErrorBoundary label="Compact Widget" fill>
           <CompactWidgetView state={state} onRefresh={retryStartup} />
+        </RenderErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  if (isMacPopover && view === 'main') {
+    return (
+      <ThemeProvider value={theme}>
+        <RenderErrorBoundary label="macOS Menu Bar Popover" fill>
+          <MacMenuBarPopoverView
+            state={state}
+            onRefresh={retryStartup}
+            onOpenDashboard={() => setView('dashboard')}
+            onOpenSettings={() => setView('settings')}
+            onToggleCompactWidget={handleToggleCompactWidget}
+            onClose={() => window.wmt.minimize().catch(() => {})}
+          />
         </RenderErrorBoundary>
       </ThemeProvider>
     );

@@ -1,7 +1,5 @@
-import * as fs from 'fs';
 import * as https from 'https';
-import * as path from 'path';
-import * as os from 'os';
+import { readClaudeCredentials } from './claudeCredentials';
 import { getOAuthCredentialState, refreshNow, RefreshOutcome } from './oauthRefresh';
 
 export const API_USAGE_CACHE_SCHEMA_VERSION = 3;
@@ -99,27 +97,15 @@ class HttpResponseError extends Error {
   }
 }
 
-function credentialsPath(): string {
-  const configDir = process.env.CLAUDE_CONFIG_DIR;
-  return path.join(configDir && configDir.trim() ? configDir : path.join(os.homedir(), '.claude'), '.credentials.json');
-}
-
 function readCredentials(): Credentials | null {
-  try {
-    const raw = JSON.parse(fs.readFileSync(
-      credentialsPath(),
-      'utf-8',
-    )) as { claudeAiOauth?: { accessToken?: unknown; rateLimitTier?: unknown; subscriptionType?: unknown } };
-    const oauth = raw.claudeAiOauth;
-    if (!oauth?.accessToken || typeof oauth.accessToken !== 'string') return null;
-    return {
-      accessToken: oauth.accessToken,
-      rateLimitTier: typeof oauth.rateLimitTier === 'string' ? oauth.rateLimitTier : '',
-      subscriptionType: typeof oauth.subscriptionType === 'string' ? oauth.subscriptionType : '',
-    };
-  } catch {
-    return null;
-  }
+  const raw = readClaudeCredentials()?.credentials;
+  const oauth = raw?.claudeAiOauth;
+  if (!oauth?.accessToken || typeof oauth.accessToken !== 'string') return null;
+  return {
+    accessToken: oauth.accessToken,
+    rateLimitTier: typeof oauth.rateLimitTier === 'string' ? oauth.rateLimitTier : '',
+    subscriptionType: typeof oauth.subscriptionType === 'string' ? oauth.subscriptionType : '',
+  };
 }
 
 export function hasClaudeCredentials(): boolean {

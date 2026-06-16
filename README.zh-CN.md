@@ -17,7 +17,7 @@
   <a href="README.md">English</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a>
 </p>
 
-> This file is a macOS-port summary. The English and Korean READMEs are the canonical detailed documents for this branch.
+> This file is a macOS edition summary. The English and Korean READMEs are the canonical detailed documents.
 
 <a id="screenshots"></a>
 
@@ -40,11 +40,7 @@
 
 | 版本 | 日期 | 主要变更 |
 |------|------|----------|
-| **[v1.18.2](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.2)** | 6/5 | 修复长 Rich quota card title 造成的布局问题，并保留 ellipsis 与 tooltip fallback。 |
-| **[v1.18.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.1)** | 6/4 | 稳定 Antigravity quota selection 与 pacing，避免 Partial History loop。 |
-| **[v1.18.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.18.0)** | 6/2 | 新增 local-only Antigravity provider、local RPC quota/session scan 和 persisted usage cache。 |
-| **[v1.17.0](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.17.0)** | 6/2 | 基于 provider quota snapshot 重构 Plan Usage。 |
-| **[v1.16.1](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.16.1)** | 5/27 | 改进 budgeted ledger warmup 与 stale provider completion marker 处理。 |
+| **mac-v1.0.0** | 2026-06-17 | 首个 macOS release track：菜单栏应用、DMG/ZIP、macOS 数据路径，以及 Claude/Codex/Antigravity tracking。 |
 
 ## 安装
 
