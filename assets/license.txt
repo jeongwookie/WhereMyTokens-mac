@@ -1,6 +1,6 @@
 WhereMyTokens -- End-User License Agreement (EULA)
 ====================================================
-Last updated: April 2026
+Last updated: June 2026
 
 PLEASE READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING WHEREMYTOKENS.
 BY CLICKING "AGREE" OR INSTALLING THE SOFTWARE, YOU ACCEPT ALL TERMS BELOW.
@@ -9,11 +9,11 @@ IF YOU DO NOT ACCEPT THESE TERMS, DO NOT INSTALL OR USE THE SOFTWARE.
 
 1. ABOUT THIS SOFTWARE
 ----------------------
-WhereMyTokens is a Windows system tray application that reads locally stored
-Claude Code session and usage files on your computer and displays token usage,
-costs, and session activity in a dashboard. The software is developed and
-maintained by an individual developer (the "Author") and is provided free of
-charge as an open-source project under the MIT License.
+WhereMyTokens for macOS is a menu bar application that reads locally stored
+Claude Code, Codex, and Antigravity usage data on your computer and displays
+token usage, costs, quotas, and session activity in a dashboard. The software
+is developed and maintained by an individual developer (the "Author") and is
+provided free of charge as an open-source project under the MIT License.
 
 This software is NOT affiliated with, endorsed by, or in any way officially
 connected with Anthropic, PBC or its products (Claude, Claude Code, etc.).
@@ -59,9 +59,11 @@ WhereMyTokens is designed with privacy as a core principle:
     any external server:
       * ~/.claude/sessions/*.json         (session metadata)
       * ~/.claude/projects/**/*.jsonl     (conversation logs)
-      * ~/.claude/.credentials.json      (OAuth token, used only to fetch
+      * Claude credentials               (OAuth material, used only to fetch
                                           your own usage data from Anthropic)
-      * %APPDATA%\WhereMyTokens\*        (local app data)
+      * ~/.codex/**/*.jsonl              (Codex session and usage metadata)
+      * ~/Library/Application Support/WhereMyTokens/*
+                                        (local macOS app data)
 
   - NO TELEMETRY: The software does not collect crash reports, usage
     statistics, analytics, or any other diagnostic data.
@@ -92,7 +94,7 @@ those open-source license terms and this EULA, the open-source license terms
 shall prevail with respect to those components.
 
 A full list of third-party licenses is available in the software's source
-repository at: https://github.com/jeongwookie/WhereMyTokens
+repository at: https://github.com/jeongwookie/WhereMyTokens-mac
 
 
 6. INTELLECTUAL PROPERTY
@@ -206,7 +208,7 @@ acceptance of the revised terms.
 13. CONTACT
 -----------
 For questions, bug reports, or feature requests, please visit:
-https://github.com/jeongwookie/WhereMyTokens/issues
+https://github.com/jeongwookie/WhereMyTokens-mac/issues
 
 ---
 WhereMyTokens is an independent open-source project. Thank you for using it.
