@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/readme-icon.svg" width="88" alt="WhereMyTokens app mark" />
+  <img src="assets/readme-icon.png" width="88" alt="WhereMyTokens app mark" />
 </p>
 
 <h1 align="center">WhereMyTokens for macOS</h1>
