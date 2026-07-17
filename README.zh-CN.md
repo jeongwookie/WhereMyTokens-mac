@@ -95,11 +95,11 @@ Important local paths:
 ```text
 ~/Library/Application Support/WhereMyTokens
 ~/Library/Application Support/WhereMyTokens/live-session.json
-~/Library/Application Support/WhereMyTokens/usage-ledger.json
+~/Library/Application Support/WhereMyTokens/usage-index.sqlite
 ~/.claude/projects/**/*.jsonl
 ~/.codex/sessions/**/*.jsonl
 ```
 
-Settings includes a **重建账本** action for replaying persisted usage totals from local history.
+Settings includes a destructive **Reset index** action that rebuilds `usage-index.sqlite` from source logs that are still available. The legacy ledger is preserved as a migration backup for this release.
 
 Antigravity support uses local RPC on `127.0.0.1` only. 它不会使用 Google OAuth、refresh token、Google cloud usage endpoint 或离线数据库 fallback.

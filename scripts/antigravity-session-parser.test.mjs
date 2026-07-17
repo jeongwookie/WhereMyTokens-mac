@@ -11,9 +11,7 @@ import {
 
 test('Antigravity file URI parser converts Windows file URIs to local paths', () => {
   const parsed = fileUriToPath('file:///C:/repo/app');
-  const expected = process.platform === 'win32'
-    ? `C:${path.sep}repo${path.sep}app`
-    : `${path.sep}C:${path.sep}repo${path.sep}app`;
+  const expected = `C:${path.sep}repo${path.sep}app`;
 
   assert.equal(parsed, expected);
 });

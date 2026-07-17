@@ -99,6 +99,7 @@ test('language preference is stored through AppSettings, not renderer localStora
 test('renderer settings model exposes enabledProviders as editable state', () => {
   const types = fs.readFileSync('src/renderer/types.ts', 'utf8');
   const settingsView = fs.readFileSync('src/renderer/views/SettingsView.tsx', 'utf8');
+  const app = fs.readFileSync('src/renderer/App.tsx', 'utf8');
 
   assert.match(types, /enabledProviders: Array<'claude' \| 'codex' \| 'antigravity'>/);
   assert.match(types, /quotaTargetModes: Partial<Record<string, QuotaDisplayMode>>/);
