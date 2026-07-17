@@ -40,6 +40,7 @@
 
 | 版本 | 日期 | 主要变更 |
 |------|------|----------|
+| **mac-v1.1.0** | 2026-07-17 | 同步 Windows v1.22 的 UsageIndex/provider pipeline、reset credits、trend breakdown 与 System/English/日本語 UI，同时保留 macOS 菜单栏、Keychain、登录项和数据路径。 |
 | **mac-v1.0.0** | 2026-06-17 | 首个 macOS release track：菜单栏应用、DMG/ZIP、macOS 数据路径，以及 Claude/Codex/Antigravity tracking。 |
 
 ## 安装

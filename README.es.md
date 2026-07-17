@@ -40,6 +40,7 @@
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **mac-v1.1.0** | 17 jul 2026 | Sincroniza UsageIndex/providers, reset credits, trend breakdown y la UI System/English/日本語 de Windows v1.22, conservando barra de menús, Keychain, login item y rutas de macOS. |
 | **mac-v1.0.0** | 17 jun 2026 | Primer track de macOS: barra de menús, DMG/ZIP, rutas de datos de macOS y tracking de Claude/Codex/Antigravity. |
 
 ## Instalación

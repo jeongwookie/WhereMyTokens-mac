@@ -40,6 +40,7 @@
 
 | バージョン | 日付 | 主な変更 |
 |------------|------|----------|
+| **mac-v1.1.0** | 2026-07-17 | Windows v1.22 の UsageIndex/provider pipeline、reset credits、trend breakdown、System/English/日本語 UI を同期し、macOS menu bar、Keychain、login item、data path を維持。 |
 | **mac-v1.0.0** | 2026-06-17 | macOS release track の初回版。メニューバー、DMG/ZIP、macOS data paths、Claude/Codex/Antigravity tracking を追加。 |
 
 ## インストール

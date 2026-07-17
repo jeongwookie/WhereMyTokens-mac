@@ -78,6 +78,7 @@ Default local data location:
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **mac-v1.1.0** | Jul 17 | Sync the Windows v1.22 UsageIndex/provider pipeline, reset credits, trend breakdowns, and System/English/Japanese UI while retaining the native macOS menu bar, Keychain, login item, and data paths |
 | **[v1.0.0](https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.0.0)** | Jun 17 | Start the independent macOS release track with menu bar packaging, DMG/ZIP artifacts, macOS data paths, Claude/Codex/Antigravity usage tracking, and Claude Desktop credential discovery |
 
 ## Highlights
