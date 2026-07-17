@@ -28,11 +28,20 @@ WhereMyTokens for macOS is a local-first menu bar app for AI coding usage observ
 
 ## Analytics
 
-- Today and all-time totals for tokens, cost, calls, sessions, cache efficiency, and savings.
-- Persistent local usage ledger for long-range totals and faster startup.
-- Trend card combining usage cost/tokens with git net-line output.
-- Activity heatmaps, rhythm charts, model usage, and tool breakdowns.
-- Git output metrics from local repositories tied to tracked sessions.
+- Today and all-time header totals for tokens, cost, calls, sessions, cache efficiency, and savings.
+- Persistent source-attributed local usage index for long-range totals, incremental startup, and project-aware filtering.
+- Usage precision retention: request detail for 8 days, hourly buckets for 35 days, daily buckets for 180 days, and exact monthly authority indefinitely.
+- Non-blocking first indexing with explicit incomplete coverage, plus a destructive `Reset index` action that rebuilds only from currently available sources.
+- Trend buckets with drill-downs for provider input/output, thinking, response, tools, cache-aware work tokens, billing tokens, and git net-line categories.
+- Activity tabs for 7-day heatmap, 5-month calendar, hourly distribution, weekly comparison, and rhythm breakdown.
+- Model usage cards and activity breakdowns for Claude output categories and Codex tool-event categories.
+
+## Code Output
+
+- Commit and net-line metrics from local git repositories tied to tracked sessions.
+- Cost per 100 added lines for today and all-time views.
+- Output growth chart across recent local days.
+- Local git author email filtering so only your commits are counted.
 
 ## Customization
 
@@ -41,4 +50,5 @@ WhereMyTokens for macOS is a local-first menu bar app for AI coding usage observ
 - Menu bar label modes for usage percentage, token count, or cost.
 - Floating Quota Pace widget with always-on-top support.
 - Dashboard layout controls for hiding or reordering optional cards.
+- Project hide and exclude controls backed by the same canonical usage query path.
 - Optional start at login.
