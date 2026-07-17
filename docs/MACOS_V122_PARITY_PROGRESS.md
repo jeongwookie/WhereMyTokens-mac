@@ -33,7 +33,7 @@ Agents must not edit outside their current exclusive scope without handing the f
 ## Phase status
 
 - **Completed:** Windows v1.22 feature synchronization, macOS adaptation, regression testing, and local release validation.
-- **External release prerequisite:** Developer ID Application signing credentials and notarization configuration. The validated local artifacts are ad-hoc signed; no GitHub Release was created.
+- **Release:** `mac-v1.1.0` is the public release target. The validated artifacts are ad-hoc signed because Developer ID Application signing credentials and notarization configuration are not available in this environment.
 
 ## Decision log
 
@@ -71,4 +71,4 @@ Agents must not edit outside their current exclusive scope without handing the f
 
 ## Resume point
 
-Implementation and local validation are complete on `codex/macos-v1-22-parity`. A future release task may add a Developer ID Application certificate, notarize/staple the existing release configuration, and publish the artifacts; it must not repeat or overwrite the preserved user worktrees.
+Implementation and local validation are complete on `codex/macos-v1-22-parity`. The `mac-v1.1.0` release uses the validated DMG/ZIP artifacts. A future release may add a Developer ID Application certificate and notarize/staple the same release configuration; it must not repeat or overwrite the preserved user worktrees.
