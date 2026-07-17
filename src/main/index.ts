@@ -42,18 +42,31 @@ const IS_MAC = process.platform === 'darwin';
 const POPUP_WIDTH = IS_MAC ? 430 : 462;
 const POPUP_HEIGHT = IS_MAC ? 640 : 1078;
 const POPUP_MARGIN = 8;
+
+function liveDebugWindow(window: BrowserWindow | null): BrowserWindow | null {
+  try {
+    return window && !window.isDestroyed() ? window : null;
+  } catch {
+    return null;
+  }
+}
+
 function registerDebugTargets() {
-  setListenerTargetsProvider(() => ([
-    { name: 'process', emitter: process },
-    { name: 'app', emitter: app },
-    { name: 'ipcMain', emitter: ipcMain },
-    { name: 'nativeTheme', emitter: nativeTheme },
-    { name: 'tray', emitter: tray },
-    { name: 'popupWindow', emitter: popupWindow },
-    { name: 'popupWebContents', emitter: popupWindow?.webContents },
-    { name: 'widgetWindow', emitter: widgetWindow },
-    { name: 'widgetWebContents', emitter: widgetWindow?.webContents },
-  ]));
+  setListenerTargetsProvider(() => {
+    const livePopup = liveDebugWindow(popupWindow);
+    const liveWidget = liveDebugWindow(widgetWindow);
+    return [
+      { name: 'process', emitter: process },
+      { name: 'app', emitter: app },
+      { name: 'ipcMain', emitter: ipcMain },
+      { name: 'nativeTheme', emitter: nativeTheme },
+      { name: 'tray', emitter: tray },
+      { name: 'popupWindow', emitter: livePopup },
+      { name: 'popupWebContents', emitter: livePopup?.webContents },
+      { name: 'widgetWindow', emitter: liveWidget },
+      { name: 'widgetWebContents', emitter: liveWidget?.webContents },
+    ];
+  });
 }
 
 function installDebugInstrumentation() {

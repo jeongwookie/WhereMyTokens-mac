@@ -8,10 +8,12 @@ import stateManagerModule from '../dist/main/stateManager.js';
 import rateLimitFetcherModule from '../dist/main/rateLimitFetcher.js';
 import codexUsageFetcherModule from '../dist/main/codexUsageFetcher.js';
 import oauthRefreshModule from '../dist/main/oauthRefresh.js';
+import debugInstrumentationModule from '../dist/main/debugInstrumentation.js';
 
 const { StateManager } = stateManagerModule;
 const { API_USAGE_CACHE_SCHEMA_VERSION, CLAUDE_API_MAX_BACKOFF_MS } = rateLimitFetcherModule;
 const { CODEX_USAGE_CACHE_SCHEMA_VERSION, getCodexAuthIdentityHash } = codexUsageFetcherModule;
+const { getListenerCounts, setListenerTargetsProvider } = debugInstrumentationModule;
 const originalFetchApiUsagePct = rateLimitFetcherModule.fetchApiUsagePct;
 const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
 const originalCodexHome = process.env.CODEX_HOME;
@@ -89,6 +91,7 @@ function withTempCodexAuth() {
 }
 
 test.afterEach(() => {
+  setListenerTargetsProvider(() => []);
   rateLimitFetcherModule.fetchApiUsagePct = originalFetchApiUsagePct;
   if (originalClaudeConfigDir === undefined) delete process.env.CLAUDE_CONFIG_DIR;
   else process.env.CLAUDE_CONFIG_DIR = originalClaudeConfigDir;
@@ -97,6 +100,17 @@ test.afterEach(() => {
   for (const dir of tempClaudeDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('debug listener snapshots tolerate targets destroyed during app shutdown', () => {
+  setListenerTargetsProvider(() => {
+    throw new Error('destroyed webContents');
+  });
+  assert.deepEqual(getListenerCounts(), { total: 0, byEmitter: {} });
+
+  const mainSource = fs.readFileSync(path.resolve('src', 'main', 'index.ts'), 'utf8');
+  assert.match(mainSource, /liveDebugWindow\(popupWindow\)/);
+  assert.match(mainSource, /!window\.isDestroyed\(\)/);
 });
 
 test('cached Claude percentages with null resets expire instead of surviving forever', () => {

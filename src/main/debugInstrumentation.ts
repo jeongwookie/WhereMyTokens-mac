@@ -115,7 +115,12 @@ export function setListenerTargetsProvider(provider: () => ListenerTarget[]): vo
 export function getListenerCounts(): DebugListenerCounts {
   const counts: Record<string, number> = {};
   let total = 0;
-  const targets = listenerTargetsProvider ? listenerTargetsProvider() : [];
+  let targets: ListenerTarget[] = [];
+  try {
+    targets = listenerTargetsProvider ? listenerTargetsProvider() : [];
+  } catch {
+    return { total: 0, byEmitter: {} };
+  }
   for (const target of targets) {
     if (!target.emitter) continue;
     const count = target.emitter.eventNames().reduce((sum, eventName) => sum + target.emitter!.listenerCount(eventName), 0);
