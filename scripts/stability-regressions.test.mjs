@@ -5,15 +5,15 @@ import os from 'node:os';
 import path from 'node:path';
 
 import stateManagerModule from '../dist/main/stateManager.js';
-import * as jsonlCacheModule from '../dist/main/jsonlCache.js';
 import rateLimitFetcherModule from '../dist/main/rateLimitFetcher.js';
 import codexUsageFetcherModule from '../dist/main/codexUsageFetcher.js';
 import oauthRefreshModule from '../dist/main/oauthRefresh.js';
+import debugInstrumentationModule from '../dist/main/debugInstrumentation.js';
 
 const { StateManager } = stateManagerModule;
-const { JsonlCache } = jsonlCacheModule;
 const { API_USAGE_CACHE_SCHEMA_VERSION, CLAUDE_API_MAX_BACKOFF_MS } = rateLimitFetcherModule;
-const { CODEX_USAGE_CACHE_SCHEMA_VERSION } = codexUsageFetcherModule;
+const { CODEX_USAGE_CACHE_SCHEMA_VERSION, getCodexAuthIdentityHash } = codexUsageFetcherModule;
+const { getListenerCounts, setListenerTargetsProvider } = debugInstrumentationModule;
 const originalFetchApiUsagePct = rateLimitFetcherModule.fetchApiUsagePct;
 const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
 const originalCodexHome = process.env.CODEX_HOME;
@@ -84,10 +84,14 @@ function withTempCodexAuth() {
     },
   }));
   process.env.CODEX_HOME = dir;
-  return fs.statSync(path.join(dir, 'auth.json')).mtimeMs;
+  return {
+    authMtimeMs: fs.statSync(path.join(dir, 'auth.json')).mtimeMs,
+    authIdentityHash: getCodexAuthIdentityHash(),
+  };
 }
 
 test.afterEach(() => {
+  setListenerTargetsProvider(() => []);
   rateLimitFetcherModule.fetchApiUsagePct = originalFetchApiUsagePct;
   if (originalClaudeConfigDir === undefined) delete process.env.CLAUDE_CONFIG_DIR;
   else process.env.CLAUDE_CONFIG_DIR = originalClaudeConfigDir;
@@ -96,6 +100,17 @@ test.afterEach(() => {
   for (const dir of tempClaudeDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('debug listener snapshots tolerate targets destroyed during app shutdown', () => {
+  setListenerTargetsProvider(() => {
+    throw new Error('destroyed webContents');
+  });
+  assert.deepEqual(getListenerCounts(), { total: 0, byEmitter: {} });
+
+  const mainSource = fs.readFileSync(path.resolve('src', 'main', 'index.ts'), 'utf8');
+  assert.match(mainSource, /liveDebugWindow\(popupWindow\)/);
+  assert.match(mainSource, /!window\.isDestroyed\(\)/);
 });
 
 test('cached Claude percentages with null resets expire instead of surviving forever', () => {
@@ -373,10 +388,13 @@ test('malformed Codex local-log rate limits are clamped or dropped', () => {
 });
 
 test('Codex live usage overrides stale local-log rate limits', () => {
+  const { authMtimeMs, authIdentityHash } = withTempCodexAuth();
   const manager = new StateManager(makeStore(), () => {});
   const now = Date.now();
   manager.codexUsageConnected = true;
   manager.codexUsagePctStoredAt = now;
+  manager.codexUsageAuthMtimeMs = authMtimeMs;
+  manager.codexUsageAuthIdentityHash = authIdentityHash;
   manager.codexUsagePct = {
     h5Available: true,
     weekAvailable: true,
@@ -413,12 +431,13 @@ test('Codex live usage overrides stale local-log rate limits', () => {
 });
 
 test('cached Codex live usage is used before local logs and ages after startup', () => {
-  const authMtimeMs = withTempCodexAuth();
+  const { authMtimeMs, authIdentityHash } = withTempCodexAuth();
   const manager = new StateManager(makeStore({
     _cachedCodexUsagePct: {
       schemaVersion: CODEX_USAGE_CACHE_SCHEMA_VERSION,
       storedAt: Date.now() - 10_000,
       authMtimeMs,
+      authIdentityHash,
       h5Available: true,
       weekAvailable: true,
       h5Pct: 5,
@@ -444,12 +463,13 @@ test('cached Codex live usage is used before local logs and ages after startup',
 });
 
 test('legacy Codex live usage cache schema is discarded on startup', () => {
-  const authMtimeMs = withTempCodexAuth();
+  const { authMtimeMs, authIdentityHash } = withTempCodexAuth();
   const store = makeStore({
     _cachedCodexUsagePct: {
       schemaVersion: CODEX_USAGE_CACHE_SCHEMA_VERSION - 1,
       storedAt: Date.now() - 10_000,
       authMtimeMs,
+      authIdentityHash,
       h5Available: true,
       weekAvailable: true,
       h5Pct: 100,
@@ -543,37 +563,8 @@ test('offline live fallback also drives Claude usage windows', () => {
         },
         activityBreakdownKind: 'tokens',
       },
-      recentEntries: [{
-        requestId: 'req-1',
-        timestampMs: now - (2 * 60 * 60 * 1000),
-        model: 'claude-sonnet',
-        provider: 'claude',
-        inputTokens: 10,
-        outputTokens: 20,
-        cacheCreationTokens: 0,
-        cacheReadTokens: 0,
-        costUSD: 1,
-        cacheSavingsUSD: 0,
-      }],
-      historicalRollup: {
-        aggregate: {
-          requestCount: 0,
-          inputTokens: 0,
-          outputTokens: 0,
-          cacheCreationTokens: 0,
-          cacheReadTokens: 0,
-          totalTokens: 0,
-          costUSD: 0,
-          cacheSavingsUSD: 0,
-        },
-        modelTotals: {},
-        hourlyBuckets: {},
-      },
-      byteOffset: 0,
-      pendingBytes: 0,
       mtimeMs: now,
       size: 1,
-      lastAccessedAt: now,
     },
   ]]);
 
@@ -980,65 +971,29 @@ test('late Claude API refresh results do not overwrite a newer generation', asyn
   assert.equal(store.values._cachedApiPct.weekPct, 17);
 });
 
-test('persisted summary cache rejects malformed nested rollups', () => {
-  const cache = new JsonlCache();
-  const malformed = cache.hydratePersistedEntry({
-    version: 2,
-    summary: {
-      provider: 'claude',
-      sessionSnapshot: {
-        modelName: '',
-        rawModel: '',
-        latestInputTokens: 0,
-        latestCacheCreationTokens: 0,
-        latestCacheReadTokens: 0,
-        toolCounts: {},
-        activityBreakdown: {
-          read: 0, editWrite: 0, search: 0, git: 0, buildTest: 0,
-          terminal: 0, thinking: 0, response: 0, subagents: 0, web: 0,
-        },
-        activityBreakdownKind: 'tokens',
-      },
-      recentEntries: [],
-      historicalRollup: {
-        aggregate: {
-          requestCount: 0,
-          inputTokens: 0,
-          outputTokens: 0,
-          cacheCreationTokens: 0,
-          cacheReadTokens: 0,
-          totalTokens: 0,
-          costUSD: 0,
-          cacheSavingsUSD: 0,
-        },
-        modelTotals: { broken: null },
-        hourlyBuckets: {},
-      },
-      byteOffset: 0,
-      pendingBytes: 0,
-      mtimeMs: 1,
-      size: 1,
-      lastAccessedAt: Date.now(),
-    },
-  });
+test('UsageIndex keeps atomic replacement, schema, compaction, and corruption recovery guards in source', () => {
+  const indexSource = fs.readFileSync(path.resolve('src', 'main', 'usageIndex', 'usageIndex.ts'), 'utf8');
+  const sqliteSource = fs.readFileSync(path.resolve('src', 'main', 'usageIndex', 'sqliteUsageIndexStorage.ts'), 'utf8');
+  const resilientSource = fs.readFileSync(path.resolve('src', 'main', 'usageIndex', 'resilientUsageIndex.ts'), 'utf8');
 
-  assert.equal(malformed, null);
+  assert.match(sqliteSource, /USAGE_INDEX_SCHEMA_VERSION = 4/);
+  assert.match(sqliteSource, /this\.transaction\(\(\) => \{/);
+  assert.match(sqliteSource, /async compact\(nowMs: number\)/);
+  assert.match(indexSource, /await this\.storage\.commitSource\(\{ mode, source: committedSource, batch \}\)/);
+  assert.match(resilientSource, /PRAGMA integrity_check/);
+  assert.match(resilientSource, /Recovered UsageIndex failed integrity check/);
 });
 
-test('startup recovery and persisted summary cache guards remain in source', () => {
+test('startup recovery and canonical UsageIndex guards remain in source', () => {
   const appSource = fs.readFileSync(path.resolve('src', 'renderer', 'App.tsx'), 'utf8');
   const stateSource = fs.readFileSync(path.resolve('src', 'main', 'stateManager.ts'), 'utf8');
   const startupSnapshotSource = fs.readFileSync(path.resolve('src', 'main', 'startupStateSnapshot.ts'), 'utf8');
-  const cacheSource = fs.readFileSync(path.resolve('src', 'main', 'jsonlCache.ts'), 'utf8');
-  const parserSource = fs.readFileSync(path.resolve('src', 'main', 'jsonlParser.ts'), 'utf8');
 
   assert.match(appSource, /BOOT_FALLBACK_DELAY_MS/);
   assert.match(appSource, /Startup Recovery/);
-  assert.match(cacheSource, /PERSISTED_SCHEMA_VERSION = 2/);
-  assert.match(cacheSource, /MAX_PERSISTED_SIZE = 2048/);
-  assert.match(cacheSource, /pendingText: undefined/);
-  assert.match(cacheSource, /version: PERSISTED_SCHEMA_VERSION/);
-  assert.match(parserSource, /pendingBytes/);
+  assert.match(stateSource, /private readonly usageIndex: UsageIndex/);
+  assert.match(stateSource, /loadUsageIndexProjection/);
+  assert.doesNotMatch(stateSource, /usageLedgerStore|jsonlCache/);
   assert.match(stateSource, /private startupFreshComplete = false/);
   assert.match(stateSource, /const initialRefreshDone = this\.startupFreshComplete/);
   assert.match(startupSnapshotSource, /stateFreshness: 'restored'/);
@@ -1067,7 +1022,7 @@ test('session discovery keeps recent-active scope and tracked session hints in s
   assert.match(stateSource, /provider\.discoverSessions\(discoveryCtx\)/);
 });
 
-test('all-time usage scan includes archived Codex files and Claude agent logs without expanding recent sessions', () => {
+test('usage scans include Claude agent logs without expanding visible startup sessions', () => {
   const source = fs.readFileSync(path.resolve('src', 'main', 'stateManager.ts'), 'utf8');
   const codexSource = fs.readFileSync(path.resolve('src', 'main', 'providers', 'codex', 'sources.ts'), 'utf8');
   const claudeSource = fs.readFileSync(path.resolve('src', 'main', 'providers', 'claude', 'sources.ts'), 'utf8');
@@ -1075,7 +1030,7 @@ test('all-time usage scan includes archived Codex files and Claude agent logs wi
   const loadEnd = source.indexOf('private async refreshChangedSummaries', loadStart);
   const loadBody = source.slice(loadStart, loadEnd);
   const claudeAllStart = claudeSource.indexOf('export function listAllClaudeSources');
-  const claudeAllEnd = claudeSource.indexOf('export async function scanClaudeSourceSummary', claudeAllStart);
+  const claudeAllEnd = claudeSource.indexOf('export function buildClaudeUsageIndexSource', claudeAllStart);
   const claudeAllBody = claudeSource.slice(claudeAllStart, claudeAllEnd);
   const scopedStart = source.indexOf('private async buildScopedSessionInfosDetailed');
   const scopedEnd = source.indexOf('private collectTrackedSessionFiles', scopedStart);
@@ -1085,12 +1040,14 @@ test('all-time usage scan includes archived Codex files and Claude agent logs wi
   assert.match(source, /private sourceBackedProviders\(settings: AppSettings\)/);
   assert.match(source, /provider\.listAllSources\(ctx\)/);
   assert.match(source, /provider\.listRecentSources\(ctx, this\.startupLimitForProvider\(provider\.id\)\)/);
-  assert.match(source, /provider\.scanSourceSummary\(ctx, source\)/);
+  assert.match(source, /provider\.usageIndexSource\(ctx, source\)/);
+  assert.match(source, /this\.usageIndex\.refreshSource\(indexedSource\.descriptor, indexedSource\.scanner\)/);
   assert.match(codexSource, /function codexSessionDedupeKey/);
   assert.match(codexSource, /function codexUsageRootRank/);
   assert.match(codexSource, /CODEX_USAGE_DIRS/);
   assert.match(claudeSource, /listAllClaudeSources/);
-  assert.match(claudeSource, /!file\.startsWith\('agent-'\)/);
+  assert.match(claudeSource, /filter\(isClaudeJsonlName\)/);
+  assert.match(claudeSource, /if \(isClaudeAgentJsonlPath\(source\.filePath\)\) return null/);
   assert.doesNotMatch(loadBody, /settings\.provider === 'claude'/);
   assert.doesNotMatch(loadBody, /settings\.provider === 'codex'/);
   assert.doesNotMatch(claudeAllBody, /!\w+\.startsWith\('agent-'\)/);
@@ -1098,21 +1055,11 @@ test('all-time usage scan includes archived Codex files and Claude agent logs wi
   assert.doesNotMatch(scopedBody, /listCodexUsageJsonlFiles/);
 });
 
-test('all-time session count comes from usage summaries instead of current UI rows', () => {
+test('all-time session count comes from indexed source summaries instead of current UI rows', () => {
   const source = fs.readFileSync(path.resolve('src', 'main', 'stateManager.ts'), 'utf8');
   const manager = new StateManager(makeStore(), () => {});
   const now = Date.now();
-  const aggregate = (requestCount) => ({
-    requestCount,
-    inputTokens: requestCount,
-    outputTokens: 0,
-    cacheCreationTokens: 0,
-    cacheReadTokens: 0,
-    totalTokens: requestCount,
-    costUSD: 0,
-    cacheSavingsUSD: 0,
-  });
-  const summary = ({ provider = 'claude', recent = false, historical = 0 } = {}) => ({
+  const summary = ({ provider = 'claude' } = {}) => ({
     provider,
     sessionSnapshot: {
       modelName: '',
@@ -1127,33 +1074,13 @@ test('all-time session count comes from usage summaries instead of current UI ro
       },
       activityBreakdownKind: provider === 'codex' ? 'events' : 'tokens',
     },
-    recentEntries: recent ? [{
-      requestId: 'recent-1',
-      timestampMs: now,
-      model: provider === 'codex' ? 'GPT-5.4' : 'Sonnet',
-      provider,
-      inputTokens: 1,
-      outputTokens: 0,
-      cacheCreationTokens: 0,
-      cacheReadTokens: 0,
-      costUSD: 0,
-      cacheSavingsUSD: 0,
-    }] : [],
-    historicalRollup: {
-      aggregate: aggregate(historical),
-      modelTotals: {},
-      hourlyBuckets: {},
-    },
-    byteOffset: 0,
-    pendingBytes: 0,
     mtimeMs: now,
     size: 1,
-    lastAccessedAt: now,
   });
 
   manager.summaries = new Map([
-    ['visible-recent.jsonl', summary({ recent: true })],
-    ['visible-historical.jsonl', summary({ provider: 'codex', historical: 2 })],
+    ['visible-claude.jsonl', summary()],
+    ['visible-codex.jsonl', summary({ provider: 'codex' })],
     ['empty.jsonl', summary()],
   ]);
   manager.state = {
@@ -1161,7 +1088,7 @@ test('all-time session count comes from usage summaries instead of current UI ro
     sessions: [{}, {}, {}],
   };
 
-  assert.equal(manager.countAllTimeUsageSessions(manager.getState().settings), 2);
+  assert.equal(manager.countAllTimeUsageSessions(manager.getState().settings), 3);
   assert.match(source, /private countAllTimeUsageSessions\(settings: AppSettings\): number/);
   assert.match(source, /allTimeSessions = this\.countAllTimeUsageSessions\(settings\)/);
   assert.doesNotMatch(source, /allTimeSessions: sessions\.length/);
@@ -1179,17 +1106,7 @@ test('all-time session count follows enabled providers for summary fallback', ()
     },
   };
   const now = Date.now();
-  const aggregate = (requestCount) => ({
-    requestCount,
-    inputTokens: requestCount,
-    outputTokens: 0,
-    cacheCreationTokens: 0,
-    cacheReadTokens: 0,
-    totalTokens: requestCount,
-    costUSD: 0,
-    cacheSavingsUSD: 0,
-  });
-  const summary = ({ provider = 'claude', model = 'claude-3-5-sonnet', recent = false, historicalModels = {} } = {}) => ({
+  const summary = ({ provider = 'claude', model = 'claude-3-5-sonnet' } = {}) => ({
     provider,
     sessionSnapshot: {
       modelName: model,
@@ -1204,39 +1121,15 @@ test('all-time session count follows enabled providers for summary fallback', ()
       },
       activityBreakdownKind: provider === 'codex' ? 'events' : 'tokens',
     },
-    recentEntries: recent ? [{
-      requestId: `${provider}-${model}-recent`,
-      timestampMs: now,
-      model,
-      provider,
-      inputTokens: 1,
-      outputTokens: 0,
-      cacheCreationTokens: 0,
-      cacheReadTokens: 0,
-      costUSD: 0,
-      cacheSavingsUSD: 0,
-    }] : [],
-    historicalRollup: {
-      aggregate: aggregate(Object.keys(historicalModels).length),
-      modelTotals: historicalModels,
-      hourlyBuckets: {},
-    },
-    byteOffset: 0,
-    pendingBytes: 0,
     mtimeMs: now,
     size: 1,
-    lastAccessedAt: now,
   });
 
   manager.summaries = new Map([
-    ['visible-sonnet.jsonl', summary({ recent: true })],
-    ['hidden-opus.jsonl', summary({ model: 'claude-3-opus', recent: true })],
-    ['hidden-codex.jsonl', summary({ provider: 'codex', model: 'gpt-5-codex', recent: true })],
-    ['visible-history.jsonl', summary({
-      historicalModels: {
-        sonnet: { provider: 'claude', model: 'claude-3-5-sonnet', tokens: 3, costUSD: 0 },
-      },
-    })],
+    ['visible-sonnet.jsonl', summary()],
+    ['hidden-opus.jsonl', summary({ model: 'claude-3-opus' })],
+    ['hidden-codex.jsonl', summary({ provider: 'codex', model: 'gpt-5-codex' })],
+    ['visible-second.jsonl', summary()],
   ]);
 
   assert.equal(manager.countAllTimeUsageSessions(settings), 3);
@@ -1314,13 +1207,13 @@ test('popup show starts with recent watcher and promotes wide watcher later', ()
   assert.match(promotionBody, /this\.scheduleForegroundRefresh\(\)/);
 });
 
-test('foreground and manual refresh use budgeted ledger-backed history scans', () => {
+test('foreground and manual refresh use budgeted UsageIndex-backed history scans', () => {
   const source = fs.readFileSync(path.resolve('src', 'main', 'stateManager.ts'), 'utf8');
   const scheduleStart = source.indexOf('  private scheduleForegroundRefresh');
   const scheduleEnd = source.indexOf('  private scheduleWideWatcherPromotion', scheduleStart);
   const scheduleBody = source.slice(scheduleStart, scheduleEnd);
   const forceStart = source.indexOf('  async forceRefresh');
-  const forceEnd = source.indexOf('  async rebuildUsageLedger', forceStart);
+  const forceEnd = source.indexOf('  async resetUsageIndex', forceStart);
   const forceBody = source.slice(forceStart, forceEnd);
   const heavyStart = source.indexOf('  private async heavyRefresh');
   const heavyEnd = source.indexOf('  private buildStartupPriorityFiles', heavyStart);
@@ -1341,12 +1234,10 @@ test('foreground and manual refresh use budgeted ledger-backed history scans', (
   assert.match(heavyBody, /allowHiddenFullScan = false/);
   assert.match(heavyBody, /!allowHiddenFullScan && initialRefreshDone && !this\.uiVisible/);
   assert.match(heavyBody, /const effectiveScanBudgetMs = scanBudgetMs \?\? /);
-  assert.match(heavyBody, /const ledgerRefresh = await this\.refreshUsageLedgerFromDiscoveredSources\(/);
-  assert.match(heavyBody, /const summaryForce = force && hasExcludedProjects/);
-  assert.match(heavyBody, /const summaryIncludeFullHistory = includeFullHistory && hasExcludedProjects/);
-  assert.match(heavyBody, /this\.loadProviderSummaries\(summaryForce, effectiveScanBudgetMs, priorityFiles, summaryIncludeFullHistory\)/);
-  assert.match(heavyBody, /const summaryPartial = loaded\.scanPartial \|\| \(hasExcludedProjects && loaded\.sourceListPartial\)/);
-  assert.match(heavyBody, /const partialHistoryScan = ledgerRefresh\.partial \|\| summaryPartial/);
+  assert.doesNotMatch(heavyBody, /refreshUsageLedger|ledgerRefresh|hasExcludedProjects/);
+  assert.match(heavyBody, /this\.loadProviderSummaries\([\s\S]*force,[\s\S]*effectiveScanBudgetMs,[\s\S]*priorityFiles,[\s\S]*includeFullHistory,[\s\S]*includeFullHistory/);
+  assert.match(heavyBody, /const summaryPartial = loaded\.scanPartial \|\| loaded\.sourceListPartial/);
+  assert.match(heavyBody, /const partialHistoryScan = summaryPartial/);
   assert.match(heavyBody, /const nextSummaries = partialHistoryScan && initialRefreshDone/);
   assert.match(heavyBody, /new Map\(\[\.\.\.this\.summaries, \.\.\.loaded\.summaries\]\)/);
   assert.match(heavyBody, /this\.mergeCodexRateLimits\(this\.codexRateLimits, loaded\.codexRateLimits \?\? undefined\)/);

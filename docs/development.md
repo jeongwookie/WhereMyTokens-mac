@@ -42,7 +42,7 @@ WhereMyTokens is an Electron menu bar app. The renderer never reads local files 
 
 | Layer | Responsibility |
 |-------|----------------|
-| Electron main | Discovers provider sessions, parses usage sources, fetches provider usage, manages menu bar/window state, and persists settings. |
+| Electron main | Discovers provider sessions, parses/fetches each usage source once, queries the canonical UsageIndex, manages menu bar/window state, and persists settings. |
 | Preload bridge | Exposes the typed `window.wmt` IPC surface with `contextIsolation` boundaries. |
 | React renderer | Shows the dashboard, settings, notifications, activity charts, and compact quota widget. |
 | `statusLine` bridge | Receives Claude Code JSON on stdin and writes a local bridge snapshot for the main process. |

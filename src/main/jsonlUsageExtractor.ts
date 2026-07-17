@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
 import { CompactRecentEntry, UsageProvider } from './jsonlTypes';
 
 export interface ExtractedUsageLine {
   entry: CompactRecentEntry;
   rawModel: string;
   contextMax?: number;
+  reasoningOutputTokens?: number;
   toolNames: string[];
 }
 
@@ -87,17 +89,15 @@ export function inferCodexModel(...records: Array<Record<string, unknown> | null
   return '';
 }
 
-function hashString(value: string): string {
-  let hash = 2166136261;
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(36);
-}
-
 export function codexEntryId(sourceKey: string, line: string, timestamp?: string): string {
-  return `${hashString(sourceKey)}-${timestamp ?? 'no-ts'}-${hashString(line)}`;
+  return createHash('sha256')
+    .update(sourceKey)
+    .update('\0')
+    .update(timestamp ?? 'no-ts')
+    .update('\0')
+    .update(line)
+    .digest('hex')
+    .slice(0, 32);
 }
 
 function parseTimestampMs(timestamp: unknown, fallbackMs: number): number {
@@ -195,6 +195,7 @@ export function extractCodexUsageLine(
     const cachedInput = Math.min(rawInput, finiteToken(usage.cached_input_tokens));
     const inp = Math.max(0, rawInput - cachedInput);
     const out = finiteToken(usage.output_tokens);
+    const reasoningOutputTokens = finiteToken(usage.reasoning_output_tokens);
     const cr = cachedInput;
     if (inp + out + cr === 0) return null;
 
@@ -204,6 +205,7 @@ export function extractCodexUsageLine(
     return {
       rawModel,
       contextMax: asNumber(info?.model_context_window),
+      reasoningOutputTokens,
       entry: {
         requestId: codexEntryId(sourceKey, line, timestamp),
         timestampMs,

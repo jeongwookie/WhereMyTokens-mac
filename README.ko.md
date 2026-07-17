@@ -55,6 +55,7 @@ WhereMyTokens는 macOS 메뉴 막대에 상주하면서 Claude Code, Codex, Anti
 
 | 버전 | 날짜 | 주요 변경 |
 |------|------|-----------|
+| **mac-v1.1.0** | 2026-07-17 | Windows v1.22의 UsageIndex/provider 파이프라인, reset credit, trend breakdown, System/English/日本語 UI를 동기화하면서 macOS 메뉴 막대, Keychain, 로그인 항목, 데이터 경로를 유지. |
 | **mac-v1.0.0** | 2026-06-17 | 첫 macOS 릴리스 트랙. 메뉴 막대 앱 shell, DMG/ZIP 패키징, macOS 데이터 경로, Claude/Codex/Antigravity 사용량 추적, Claude Desktop credential discovery 포함. |
 
 ## 설치
@@ -143,8 +144,8 @@ Claude bridge snapshot 위치:
 ### 분석
 
 - 오늘과 전체 기간 합계.
-- 로컬에 `usage-ledger.json`, `git-output-ledger.json`로 저장되는 usage ledger와 git output ledger.
-- Settings의 **Rebuild ledger**로 저장된 usage ledger를 로컬 히스토리에서 다시 재생해 복구할 수 있습니다.
+- 로컬에 `usage-index.sqlite`, `git-output-ledger.json`로 저장되는 source-attributed usage index와 git output ledger.
+- Settings의 **Reset index**는 현재 남아 있는 원본 로그에서 인덱스를 다시 만드는 파괴적 작업입니다. 이번 릴리스에서는 기존 ledger를 마이그레이션 백업으로 보존합니다.
 - 사용 비용/토큰과 git 순 라인 산출을 같이 보여주는 Trend card.
 - 활동 히트맵, rhythm chart, model breakdown, tool activity summary.
 

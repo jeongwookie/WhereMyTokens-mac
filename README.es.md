@@ -40,6 +40,7 @@
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **mac-v1.1.0** | 17 jul 2026 | Sincroniza UsageIndex/providers, reset credits, trend breakdown y la UI System/English/日本語 de Windows v1.22, conservando barra de menús, Keychain, login item y rutas de macOS. |
 | **mac-v1.0.0** | 17 jun 2026 | Primer track de macOS: barra de menús, DMG/ZIP, rutas de datos de macOS y tracking de Claude/Codex/Antigravity. |
 
 ## Instalación
@@ -95,11 +96,11 @@ Important local paths:
 ```text
 ~/Library/Application Support/WhereMyTokens
 ~/Library/Application Support/WhereMyTokens/live-session.json
-~/Library/Application Support/WhereMyTokens/usage-ledger.json
+~/Library/Application Support/WhereMyTokens/usage-index.sqlite
 ~/.claude/projects/**/*.jsonl
 ~/.codex/sessions/**/*.jsonl
 ```
 
 Antigravity support uses local RPC on `127.0.0.1` only. It does not use Google OAuth, refresh tokens, Google cloud usage endpoints, or offline database fallback.
 
-Settings includes a **Rebuild ledger** action for replaying persisted usage totals from local history.
+Settings incluye una acción destructiva **Reset index** que reconstruye `usage-index.sqlite` desde los registros de origen aún disponibles. El ledger anterior se conserva como respaldo de migración en esta versión.
