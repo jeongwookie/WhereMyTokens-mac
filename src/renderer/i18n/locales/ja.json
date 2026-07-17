@@ -45,6 +45,31 @@
       "messageTimeout": "最近のセッションと使用状況の読み込みをバックグラウンドで続けながら、リカバリー画面を表示しています。"
     }
   },
+  "macMenuBarPopover": {
+    "menuBar": "メニューバー",
+    "periodToggle": "使用期間",
+    "close": "ポップオーバーを閉じる",
+    "fiveHourStatus": "5時間の状況",
+    "updated": "{{age}}に更新",
+    "updatedAt": "更新日時: {{date}}",
+    "usageSummary_one": "{{tokens}}トークン / {{cost}} / {{count}}回",
+    "usageSummary_other": "{{tokens}}トークン / {{cost}} / {{count}}回",
+    "quotaWindows": "クォータ期間",
+    "quotaLoading": "クォータデータを読み込み中です。",
+    "nowCoding": "進行中のコーディング",
+    "noLiveSessions": "実行中のコーディングセッションはありません。",
+    "widget": "ウィジェット",
+    "status": {
+      "waitingForQuota": "クォータデータを待機中",
+      "syncing": "{{title}} {{label}}を同期中",
+      "waiting": "{{title}} {{label}}を待機中",
+      "localTokenData": "{{title}} {{label}}はローカルのトークンデータを使用中",
+      "resetsIn": "{{title}} {{label}}は{{reset}}後にリセット",
+      "providerWindow": "{{title}} {{label}}",
+      "fiveHourLoading": "5時間クォータを読み込み中",
+      "localShort": "ローカル"
+    }
+  },
   "help": {
     "title": "ヘルプ"
   },
@@ -338,8 +363,6 @@
       "periodAll": "全期間",
       "hideCompactWidget": "フローティング Quota Pace ウィジェットを非表示",
       "showCompactWidget": "フローティング Quota Pace ウィジェットを表示",
-      "hideTaskbarQuota": "タスクバーのミニクォータ表示を非表示",
-      "showTaskbarQuota": "タスクバーのミニクォータ表示を表示",
       "minimize": "最小化",
       "quit": "終了",
       "allTimeCost": "累計コスト",
@@ -632,10 +655,6 @@
       "alwaysOnTopHint": "ダッシュボードのみに適用されます",
       "floatingWidget": "フローティング使用状況ウィジェット",
       "floatingWidgetHint": "常に最前面に表示され、クォータのペースをひと目で確認できます",
-      "taskbarQuota": "タスクバーのミニクォータ表示",
-      "taskbarQuotaHint": "対応している場合、Windowsタスクバー内に5時間/1週間のクォータ行を固定表示します",
-      "taskbarMaxBlocks": "タスクバーの最大ブロック数",
-      "taskbarMaxBlocksHint": "タスクバーの各行に表示するクォータブロックの数を制限します",
       "blocksOption_other": "{{count}} ブロック",
       "waitingAnimation": "待機中アニメーション",
       "waitingAnimationHint": "制限データが取得できない場合、フローティングウィジェットの待機バーをアニメーション表示します",

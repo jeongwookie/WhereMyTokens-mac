@@ -45,6 +45,31 @@
       "messageTimeout": "Showing a recovery view while recent sessions and usage continue loading in the background."
     }
   },
+  "macMenuBarPopover": {
+    "menuBar": "Menu Bar",
+    "periodToggle": "Usage period",
+    "close": "Close popover",
+    "fiveHourStatus": "5h status",
+    "updated": "Updated {{age}}",
+    "updatedAt": "Updated: {{date}}",
+    "usageSummary_one": "{{tokens}} tokens / {{cost}} / {{count}} call",
+    "usageSummary_other": "{{tokens}} tokens / {{cost}} / {{count}} calls",
+    "quotaWindows": "Quota windows",
+    "quotaLoading": "Quota data is loading.",
+    "nowCoding": "Now coding",
+    "noLiveSessions": "No live coding sessions.",
+    "widget": "Widget",
+    "status": {
+      "waitingForQuota": "Waiting for quota data",
+      "syncing": "{{title}} {{label}} is syncing",
+      "waiting": "{{title}} {{label}} is waiting",
+      "localTokenData": "{{title}} {{label}} is using local token data",
+      "resetsIn": "{{title}} {{label}} resets in {{reset}}",
+      "providerWindow": "{{title}} {{label}}",
+      "fiveHourLoading": "5h quota data is loading",
+      "localShort": "local"
+    }
+  },
   "help": {
     "title": "Help"
   },
@@ -338,8 +363,6 @@
       "periodAll": "all",
       "hideCompactWidget": "Hide floating Quota Pace widget",
       "showCompactWidget": "Show floating Quota Pace widget",
-      "hideTaskbarQuota": "Hide taskbar mini quota display",
-      "showTaskbarQuota": "Show taskbar mini quota display",
       "minimize": "Minimize",
       "quit": "Quit",
       "allTimeCost": "All-time Cost",
@@ -632,10 +655,6 @@
       "alwaysOnTopHint": "Applies to the dashboard only",
       "floatingWidget": "Floating usage widget",
       "floatingWidgetHint": "Always stays on top; shows quota pace at a glance",
-      "taskbarQuota": "Taskbar mini quota display",
-      "taskbarQuotaHint": "Shows fixed 5h / 1w quota rows inside the Windows taskbar when supported",
-      "taskbarMaxBlocks": "Taskbar max blocks",
-      "taskbarMaxBlocksHint": "Limits how many quota blocks each taskbar row shows",
       "blocksOption_one": "{{count}} block",
       "blocksOption_other": "{{count}} blocks",
       "waitingAnimation": "Waiting animation",

@@ -1,9 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { ExternalLink, LayoutPanelTop, RefreshCw, Settings, X } from 'lucide-react';
 import { AppState, ProviderId, SessionInfo } from '../types';
 import { useTheme } from '../ThemeContext';
 import { buildQuotaDisplayModels, QuotaDisplayRowViewModel } from '../quotaDisplayModels';
-import { fmtCostShort, fmtTokens, quotaPctBarColor, stateColor, stateLabel } from '../theme';
+import { fmtCostShort, fmtTokens, quotaPctBarColor, stateColor } from '../theme';
 import { providerDisplayName } from '../limitDisplay';
 
 interface Props {
@@ -57,14 +59,14 @@ function formatReset(resetMs: number | null): string {
   return `${hours}h ${minutes}m`;
 }
 
-function buildQuotaRows(state: AppState): QuotaRowViewModel[] {
+function buildQuotaRows(state: AppState, t: TFunction): QuotaRowViewModel[] {
   const { widgetGroups } = buildQuotaDisplayModels({
     usage: state.usage,
     providerQuotas: state.providerQuotas,
     settings: state.settings,
     historyWarmupPending: state.historyWarmupPending,
     historyWarmupStartsAt: state.historyWarmupStartsAt,
-    formatWarmupEta: () => 'syncing',
+    formatWarmupEta: () => t('tokenStatsCard.syncing'),
     simpleIncludesRich: true,
   });
 
@@ -125,22 +127,26 @@ function primaryQuota(rows: QuotaRowViewModel[]): QuotaRowViewModel | null {
   return candidates.reduce((best, row) => row.quotaPct > best.quotaPct ? row : best, candidates[0]);
 }
 
-function statusText(row: QuotaRowViewModel | null): string {
-  if (!row) return 'Waiting for quota data';
-  if (row.pending) return `${row.title} ${row.label} is syncing`;
-  if (row.waiting) return `${row.title} ${row.label} is waiting`;
-  if (!row.hasQuotaSignal && row.tokens > 0) return `${row.title} ${row.label} is using local token data`;
+function statusText(row: QuotaRowViewModel | null, t: TFunction): string {
+  if (!row) return t('macMenuBarPopover.status.waitingForQuota');
+  if (row.pending) return t('macMenuBarPopover.status.syncing', { title: row.title, label: row.label });
+  if (row.waiting) return t('macMenuBarPopover.status.waiting', { title: row.title, label: row.label });
+  if (!row.hasQuotaSignal && row.tokens > 0) {
+    return t('macMenuBarPopover.status.localTokenData', { title: row.title, label: row.label });
+  }
   const reset = formatReset(row.resetMs);
-  return reset ? `${row.title} ${row.label} resets in ${reset}` : `${row.title} ${row.label}`;
+  return reset
+    ? t('macMenuBarPopover.status.resetsIn', { title: row.title, label: row.label, reset })
+    : t('macMenuBarPopover.status.providerWindow', { title: row.title, label: row.label });
 }
 
-function topLine(rows: QuotaRowViewModel[], currency: string, usdToKrw: number): string {
+function topLine(rows: QuotaRowViewModel[], currency: string, usdToKrw: number, t: TFunction): string {
   const h5Rows = rows.filter(row => /5h/i.test(row.label));
   const scope = h5Rows.length > 0 ? h5Rows : rows.slice(0, 2);
-  if (scope.length === 0) return '5h quota data is loading';
+  if (scope.length === 0) return t('macMenuBarPopover.status.fiveHourLoading');
   const parts = scope.slice(0, 3).map(row => {
     const value = row.pending
-      ? 'scan'
+      ? t('compactWidgetView.status.scanning')
       : row.hasQuotaSignal
         ? formatPct(row.quotaPct)
         : row.tokens > 0
@@ -151,6 +157,16 @@ function topLine(rows: QuotaRowViewModel[], currency: string, usdToKrw: number):
   const cost = scope.reduce((sum, row) => sum + row.costUSD, 0);
   if (cost > 0) parts.push(fmtCostShort(cost, currency, usdToKrw));
   return parts.join(' / ');
+}
+
+function updatedAge(lastUpdated: number, t: TFunction): string {
+  if (!Number.isFinite(lastUpdated) || lastUpdated <= 0) return t('mainView.refresh.justNow');
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - lastUpdated) / 1000));
+  if (elapsedSeconds < 5) return t('mainView.refresh.justNow');
+  if (elapsedSeconds < 60) return t('mainView.refresh.secondsAgo', { n: elapsedSeconds });
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) return t('mainView.refresh.minutesAgo', { n: elapsedMinutes });
+  return t('mainView.refresh.hoursAgo', { n: Math.floor(elapsedMinutes / 60) });
 }
 
 function IconButton({
@@ -166,6 +182,7 @@ function IconButton({
   return (
     <button
       title={title}
+      aria-label={title}
       onClick={onClick}
       style={{
         ...noDrag,
@@ -189,11 +206,17 @@ function IconButton({
 
 function PeriodToggle({ period, onPeriod }: { period: Period; onPeriod: (period: Period) => void }) {
   const C = useTheme();
+  const { t } = useTranslation();
   return (
-    <div style={{ ...noDrag, display: 'inline-flex', gap: 2, padding: 2, borderRadius: 5, background: 'rgba(255,255,255,0.08)' }}>
+    <div
+      role="group"
+      aria-label={t('macMenuBarPopover.periodToggle')}
+      style={{ ...noDrag, display: 'inline-flex', gap: 2, padding: 2, borderRadius: 5, background: 'rgba(255,255,255,0.08)' }}
+    >
       {(['today', 'all'] as Period[]).map(item => (
         <button
           key={item}
+          aria-pressed={period === item}
           onClick={() => onPeriod(item)}
           style={{
             height: 22,
@@ -207,7 +230,7 @@ function PeriodToggle({ period, onPeriod }: { period: Period; onPeriod: (period:
             cursor: 'pointer',
           }}
         >
-          {item}
+          {t(`codeOutputCard.period.${item}`)}
         </button>
       ))}
     </div>
@@ -216,14 +239,15 @@ function PeriodToggle({ period, onPeriod }: { period: Period; onPeriod: (period:
 
 function QuotaRow({ row, currency, usdToKrw }: { row: QuotaRowViewModel; currency: string; usdToKrw: number }) {
   const C = useTheme();
+  const { t } = useTranslation();
   const color = row.pending || row.waiting ? C.textMuted : quotaPctBarColor(row.quotaPct, C);
   const value = row.pending
-    ? 'scan'
+    ? t('compactWidgetView.status.scanning')
     : row.hasQuotaSignal
       ? formatPct(row.quotaPct)
       : row.tokens > 0
         ? fmtTokens(row.tokens)
-        : 'waiting';
+        : t('tokenStatsCard.waiting');
   const reset = row.visualKind === 'percentOnly' ? '' : formatReset(row.resetMs);
   return (
     <div
@@ -248,7 +272,7 @@ function QuotaRow({ row, currency, usdToKrw }: { row: QuotaRowViewModel; currenc
       </div>
       <div style={{ minWidth: 76, textAlign: 'right' }}>
         <div style={{ color, fontSize: 15, fontWeight: 900 }}>{value}</div>
-        <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 700 }}>{row.costUSD > 0 ? fmtCostShort(row.costUSD, currency, usdToKrw) : row.hasQuotaSignal && row.tokens > 0 ? fmtTokens(row.tokens) : !row.hasQuotaSignal && row.tokens > 0 ? 'local' : ''}</div>
+        <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 700 }}>{row.costUSD > 0 ? fmtCostShort(row.costUSD, currency, usdToKrw) : row.hasQuotaSignal && row.tokens > 0 ? fmtTokens(row.tokens) : !row.hasQuotaSignal && row.tokens > 0 ? t('macMenuBarPopover.status.localShort') : ''}</div>
       </div>
     </div>
   );
@@ -256,6 +280,7 @@ function QuotaRow({ row, currency, usdToKrw }: { row: QuotaRowViewModel; currenc
 
 function SessionRow({ session }: { session: SessionInfo }) {
   const C = useTheme();
+  const { t } = useTranslation();
   const color = stateColor(session.state, C);
   const title = session.projectName || session.cwd.split(/[\\/]/).filter(Boolean).pop() || providerDisplayName(session.provider);
   const meta = [
@@ -270,7 +295,7 @@ function SessionRow({ session }: { session: SessionInfo }) {
         <span style={{ display: 'block', color: C.text, fontSize: 12, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
         <span style={{ display: 'block', marginTop: 2, color: C.textMuted, fontSize: 10, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta || session.source}</span>
       </span>
-      <span style={{ color, fontSize: 11, fontWeight: 900 }}>{stateLabel(session.state)}</span>
+      <span style={{ color, fontSize: 11, fontWeight: 900 }}>{t(`common.state.${session.state}`)}</span>
     </div>
   );
 }
@@ -284,14 +309,28 @@ export default function MacMenuBarPopoverView({
   onClose,
 }: Props) {
   const C = useTheme();
+  const { t, i18n } = useTranslation();
   const [period, setPeriod] = useState<Period>('today');
   const [refreshing, setRefreshing] = useState(false);
-  const rows = useMemo(() => buildQuotaRows(state), [state]);
+  const rows = useMemo(() => buildQuotaRows(state, t), [state, t]);
   const selected = useMemo(() => primaryQuota(rows), [rows]);
   const usage = useMemo(() => periodUsage(state, period), [period, state]);
   const sessions = useMemo(() => activeSessions(state), [state]);
-  const usageLine = `${fmtTokens(usage.tokens)} tokens / ${fmtCostShort(usage.cost, state.settings.currency, state.settings.usdToKrw)} / ${usage.requests} calls`;
-  const quotaLine = topLine(rows, state.settings.currency, state.settings.usdToKrw);
+  const periodLabel = t(`codeOutputCard.period.${period}`);
+  const usageLine = t('macMenuBarPopover.usageSummary', {
+    tokens: fmtTokens(usage.tokens),
+    cost: fmtCostShort(usage.cost, state.settings.currency, state.settings.usdToKrw),
+    count: usage.requests,
+  });
+  const quotaLine = topLine(rows, state.settings.currency, state.settings.usdToKrw, t);
+  const updateAge = updatedAge(state.lastUpdated, t);
+  const updatedLabel = t('macMenuBarPopover.updated', { age: updateAge });
+  const lastUpdatedDate = state.lastUpdated > 0 ? new Date(state.lastUpdated) : null;
+  const updatedTitle = lastUpdatedDate && Number.isFinite(lastUpdatedDate.getTime())
+    ? t('macMenuBarPopover.updatedAt', {
+      date: lastUpdatedDate.toLocaleString(i18n.resolvedLanguage || i18n.language),
+    })
+    : updatedLabel;
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
@@ -338,7 +377,7 @@ export default function MacMenuBarPopoverView({
             <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
                 <div style={{ fontSize: 16, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>WhereMyTokens</div>
-                <div style={{ color: C.headerSub, fontSize: 10, fontWeight: 800 }}>Menu Bar</div>
+                <div style={{ color: C.headerSub, fontSize: 10, fontWeight: 800 }}>{t('macMenuBarPopover.menuBar')}</div>
               </div>
               <div title={quotaLine} style={{ marginTop: 4, color: C.headerSub, fontSize: 11, fontFamily: C.fontMono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {quotaLine}
@@ -346,7 +385,7 @@ export default function MacMenuBarPopoverView({
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <PeriodToggle period={period} onPeriod={setPeriod} />
-              <IconButton title="Close popover" onClick={onClose}><X size={14} strokeWidth={2.4} /></IconButton>
+              <IconButton title={t('macMenuBarPopover.close')} onClick={onClose}><X size={14} strokeWidth={2.4} /></IconButton>
             </div>
           </div>
         </header>
@@ -366,43 +405,43 @@ export default function MacMenuBarPopoverView({
           <section style={{ borderRadius: 8, background: C.bgCard, border: `1px solid ${C.border}`, padding: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 12, alignItems: 'center' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8 }}>5h status</div>
+                <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8 }}>{t('macMenuBarPopover.fiveHourStatus')}</div>
                 <div style={{ marginTop: 4, color: C.text, fontSize: 22, fontWeight: 900 }}>{selected && !selected.waiting && !selected.pending ? (selected.hasQuotaSignal ? formatPct(selected.quotaPct) : selected.tokens > 0 ? fmtTokens(selected.tokens) : '--') : '--'}</div>
-                <div title={statusText(selected)} style={{ marginTop: 2, color: C.textDim, fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {statusText(selected)}
+                <div title={statusText(selected, t)} style={{ marginTop: 2, color: C.textDim, fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {statusText(selected, t)}
                 </div>
               </div>
               <div style={{ minWidth: 116, textAlign: 'right', color: C.textDim, fontSize: 11, fontWeight: 800 }}>
-                <div>{period}</div>
+                <div title={updatedTitle}>{periodLabel} · {updatedLabel}</div>
                 <div style={{ marginTop: 5, color: C.accent, fontSize: 14, fontWeight: 900 }}>{fmtCostShort(usage.cost, state.settings.currency, state.settings.usdToKrw)}</div>
-                <div style={{ marginTop: 2 }}>{fmtTokens(usage.tokens)} tok</div>
+                <div style={{ marginTop: 2 }}>{t('activityChart.tokensValue', { value: fmtTokens(usage.tokens) })}</div>
               </div>
             </div>
           </section>
 
           <section style={{ display: 'grid', gap: 7 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0 2px' }}>
-              <div style={{ color: C.textDim, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8 }}>Quota windows</div>
+              <div style={{ color: C.textDim, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8 }}>{t('macMenuBarPopover.quotaWindows')}</div>
               <div title={usageLine} style={{ color: C.textMuted, fontSize: 10, fontFamily: C.fontMono, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{usageLine}</div>
             </div>
             {rows.length === 0 ? (
-              <div style={{ borderRadius: 7, background: C.bgRow, border: `1px solid ${C.borderSub}`, padding: 12, color: C.textMuted, fontSize: 12, fontWeight: 700 }}>Quota data is loading.</div>
+              <div style={{ borderRadius: 7, background: C.bgRow, border: `1px solid ${C.borderSub}`, padding: 12, color: C.textMuted, fontSize: 12, fontWeight: 700 }}>{t('macMenuBarPopover.quotaLoading')}</div>
             ) : rows.map(row => <QuotaRow key={row.key} row={row} currency={state.settings.currency} usdToKrw={state.settings.usdToKrw} />)}
           </section>
 
           <section style={{ display: 'grid', gap: 7 }}>
-            <div style={{ color: C.textDim, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8, padding: '0 2px' }}>Now coding</div>
+            <div style={{ color: C.textDim, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8, padding: '0 2px' }}>{t('macMenuBarPopover.nowCoding')}</div>
             {sessions.length === 0 ? (
-              <div style={{ borderRadius: 7, background: C.bgRow, border: `1px solid ${C.borderSub}`, padding: 12, color: C.textMuted, fontSize: 12, fontWeight: 700 }}>No live coding sessions.</div>
+              <div style={{ borderRadius: 7, background: C.bgRow, border: `1px solid ${C.borderSub}`, padding: 12, color: C.textMuted, fontSize: 12, fontWeight: 700 }}>{t('macMenuBarPopover.noLiveSessions')}</div>
             ) : sessions.map(session => <SessionRow key={session.sessionId || `${session.provider}-${session.cwd}`} session={session} />)}
           </section>
         </div>
 
         <footer style={{ ...noDrag, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, padding: 10, background: C.bgCard, borderTop: `1px solid ${C.border}` }}>
-          <FooterButton title="Refresh now" label={refreshing ? 'Syncing' : 'Refresh'} onClick={handleRefresh}><RefreshCw size={13} /></FooterButton>
-          <FooterButton title="Show floating widget" label="Widget" onClick={onToggleCompactWidget}><LayoutPanelTop size={13} /></FooterButton>
-          <FooterButton title="Open full dashboard" label="Open" onClick={onOpenDashboard}><ExternalLink size={13} /></FooterButton>
-          <FooterButton title="Open settings" label="Prefs" onClick={onOpenSettings}><Settings size={13} /></FooterButton>
+          <FooterButton title={t('compactWidgetView.button.refreshNow')} label={refreshing ? t('tokenStatsCard.syncing') : t('mainView.refresh.label')} onClick={handleRefresh}><RefreshCw size={13} /></FooterButton>
+          <FooterButton title={t('mainView.header.showCompactWidget')} label={t('macMenuBarPopover.widget')} onClick={onToggleCompactWidget}><LayoutPanelTop size={13} /></FooterButton>
+          <FooterButton title={t('compactWidgetView.button.openDashboard')} label={t('mainView.sessions.chipOpen')} onClick={onOpenDashboard}><ExternalLink size={13} /></FooterButton>
+          <FooterButton title={t('mainView.nav.settings')} label={t('mainView.nav.settings')} onClick={onOpenSettings}><Settings size={13} /></FooterButton>
         </footer>
       </main>
     </div>
@@ -424,6 +463,7 @@ function FooterButton({
   return (
     <button
       title={title}
+      aria-label={title}
       onClick={onClick}
       style={{
         height: 30,
