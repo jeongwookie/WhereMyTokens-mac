@@ -12,6 +12,7 @@ import { compactWidgetSize } from './compactWidgetSizing';
 import { syncLoginItemSettings } from './loginItems';
 import { whereMyTokensDataDir } from '../shared/platformPaths';
 import { openUsageIndex } from './usageIndex';
+import { preserveLegacyUsageLedger } from './usageIndex/legacyLedgerBackup';
 
 if (isDebugInstrumentationEnabled()) {
   app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
@@ -760,7 +761,12 @@ app.whenReady().then(async () => {
     });
   }
 
-  const usageIndex = await openUsageIndex(path.join(app.getPath('userData'), 'usage-index.sqlite'));
+  const userDataPath = app.getPath('userData');
+  const legacyLedgerBackup = await preserveLegacyUsageLedger(userDataPath);
+  if (legacyLedgerBackup.status === 'failed') {
+    appendCrashLog('legacy-ledger-backup-failed', { reason: legacyLedgerBackup.reason });
+  }
+  const usageIndex = await openUsageIndex(path.join(userDataPath, 'usage-index.sqlite'));
   const manager = new StateManager(store, (state) => updateTray(state), { usageIndex });
   stateManager = manager;
   registerIpcHandlers({

@@ -34,6 +34,7 @@ test('full build emits the complete renderer shell', () => {
 test('test command exercises the full build before running tests', () => {
   const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-  assert.match(pkg.scripts.test, /^npm run build && node --test /);
+  assert.match(pkg.scripts.test, /^npm run typecheck:reset-contract && /);
+  assert.match(pkg.scripts.test, /npm run build && node --test /);
   assert.match(pkg.scripts.test, /scripts\/renderer-build\.test\.mjs/);
 });
