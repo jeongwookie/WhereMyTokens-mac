@@ -89,7 +89,7 @@ Default local data location:
 - Active and recent session tracking from local provider data.
 - Today and all-time token, cost, cache, model, and call summaries.
 - Activity heatmaps, rhythm charts, model usage, and tool breakdowns.
-- Persistent totals use `usage-ledger.json`; **Rebuild ledger** in Settings can reset and replay local history.
+- Persistent totals use `usage-index.sqlite`; **Reset index** in Settings destructively rebuilds it from source logs that are still available. A legacy ledger is preserved as a migration backup for this release.
 - Local-first storage with no cloud sync or telemetry.
 
 ## Privacy

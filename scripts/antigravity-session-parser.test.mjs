@@ -11,9 +11,7 @@ import {
 
 test('Antigravity file URI parser converts Windows file URIs to local paths', () => {
   const parsed = fileUriToPath('file:///C:/repo/app');
-  const expected = process.platform === 'win32'
-    ? `C:${path.sep}repo${path.sep}app`
-    : `${path.sep}C:${path.sep}repo${path.sep}app`;
+  const expected = `C:${path.sep}repo${path.sep}app`;
 
   assert.equal(parsed, expected);
 });
@@ -59,4 +57,13 @@ test('Antigravity session parser uses created time fallback and leaves unknown m
   }, now);
   assert.equal(unknownTime.state, 'idle');
   assert.equal(unknownTime.lastModified, null);
+});
+
+test('Antigravity session parser rejects encoded NUL workspace cwd', () => {
+  const session = trajectorySummaryToSession('antigravity:test-owner:cascade:nul-path', {
+    createdTime: '2026-06-01T12:00:00.000Z',
+    workspaces: [{ workspaceFolderAbsoluteUri: 'file:///C:/repo/%00app' }],
+  }, Date.parse('2026-06-01T12:00:00.000Z'));
+
+  assert.equal(session, null);
 });

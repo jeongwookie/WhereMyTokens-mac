@@ -11,6 +11,7 @@ import type { ProviderId, ProviderQuotaWindow } from './providers/types';
 import { compactWidgetSize } from './compactWidgetSizing';
 import { syncLoginItemSettings } from './loginItems';
 import { whereMyTokensDataDir } from '../shared/platformPaths';
+import { openUsageIndex } from './usageIndex';
 
 if (isDebugInstrumentationEnabled()) {
   app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
@@ -111,7 +112,7 @@ function rebuildTrayMenu() {
     { label: widgetLabel, click: widgetAction },
     { label: 'Settings', click: () => showPopup('settings') },
     { type: 'separator' },
-    { label: 'Quit', click: () => { app.exit(0); } },
+    { label: 'Quit', click: () => { app.quit(); } },
   ]));
 }
 
@@ -280,7 +281,7 @@ function openWidgetContextMenu() {
     { type: 'separator' },
     { label: 'Hide widget', click: hideCompactWidget },
     { type: 'separator' },
-    { label: 'Quit', click: () => { app.exit(0); } },
+    { label: 'Quit', click: () => { app.quit(); } },
   ]).popup({ window: widgetWindow });
 }
 
@@ -293,7 +294,7 @@ function openDashboardContextMenu() {
     { type: 'separator' },
     { label: 'Show widget', click: showCompactWidget },
     { type: 'separator' },
-    { label: 'Quit', click: () => { app.exit(0); } },
+    { label: 'Quit', click: () => { app.quit(); } },
   ]).popup({ window: popupWindow });
 }
 
@@ -743,7 +744,7 @@ function markPopupMoving() {
   }, 250);
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   app.setAppUserModelId('com.wheremytokens.app');
   if (process.platform === 'darwin') app.dock?.hide();
   initOAuthRefresh(
@@ -759,31 +760,36 @@ app.whenReady().then(() => {
     });
   }
 
-  const manager = new StateManager(store, (state) => updateTray(state));
+  const usageIndex = await openUsageIndex(path.join(app.getPath('userData'), 'usage-index.sqlite'));
+  const manager = new StateManager(store, (state) => updateTray(state), { usageIndex });
   stateManager = manager;
-  registerIpcHandlers(
+  registerIpcHandlers({
     store,
-    () => manager.getState(),
-    () => manager.forceRefresh(),
-    () => {
+    getState: () => manager.getState(),
+    forceRefresh: () => manager.forceRefresh(),
+    applySettingsChange: () => {
       manager.applySettingsChange();
       applyRuntimeSettings();
     },
-    () => manager.rebuildUsageLedger(),
-    () => manager.getDebugMemSnapshot('ipc'),
-    {
+    resetUsageIndex: () => manager.resetUsageIndex(),
+    getDebugMemSnapshot: () => manager.getDebugMemSnapshot('ipc'),
+    windowActions: {
       openDashboard: () => showPopup('main'),
       openSettings: () => showPopup('settings'),
       hideCompactWidget,
     },
-  );
+    getBreakdown: (grain, bucketKey) => manager.getBreakdown(grain, bucketKey),
+  });
 
   tray = createTray();
   rebuildTrayMenu();
   popupWindow = createPopupWindow();
   manager.start();
   syncCompactWidget();
-  app.once('before-quit', () => manager.stop());
+  app.once('before-quit', () => {
+    manager.stop();
+    void manager.close();
+  });
 
   // Show popup on first launch (after renderer is ready)
   popupWindow.once('ready-to-show', () => showPopup());
@@ -798,7 +804,7 @@ app.whenReady().then(() => {
   syncLoginItemSettings(settings.openAtLogin);
 
   // App quit IPC
-  ipcMain.handle('app:quit', () => { app.exit(0); });
+  ipcMain.handle('app:quit', () => { app.quit(); });
   ipcMain.handle('debug-renderer-event', (_event, payload: Record<string, unknown>) => {
     if (!isDebugInstrumentationEnabled()) return;
     appendCrashLog('renderer-event', {

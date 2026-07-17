@@ -1,7 +1,6 @@
 import type { AppSettings } from '../ipc';
-import type { JsonlCache } from '../jsonlCache';
-import type { ActivityBreakdown, ActivityBreakdownKind, FileUsageSummary } from '../jsonlTypes';
-import type { UsageLedgerSnapshot } from '../usageLedgerTypes';
+import type { ActivityBreakdown, ActivityBreakdownKind } from '../jsonlTypes';
+import type { UsageSourceDescriptor, UsageSourceScanner } from '../usageIndex';
 
 export type ProviderId = 'claude' | 'codex' | 'antigravity';
 
@@ -44,11 +43,14 @@ export type ProviderCapability =
 export interface ProviderContext {
   settings: AppSettings;
   nowMs: number;
-  jsonlCache: JsonlCache;
   scanBudgetMs: number | null;
   prioritySourceIds: Set<string>;
   includeFullHistory: boolean;
   force: boolean;
+  /** true이면 Codex usage GET을 건너뛰고 reset credits만 갱신한다. */
+  skipCodexUsage?: boolean;
+  /** true이면 reset credits 전용 GET만 건너뛴다. usage GET은 계속 실행된다. */
+  skipCodexResetCredits?: boolean;
 }
 
 export interface ProviderAdapter {
@@ -78,12 +80,10 @@ export interface SourceBackedProviderAdapter extends ProviderAdapter {
 
   buildStartupSession?(ctx: ProviderContext, source: ProviderSource): DiscoveredSession | null;
 
-  scanSourceSummary(
+  usageIndexSource(
     ctx: ProviderContext,
     source: ProviderSource,
-  ): Promise<FileUsageSummary | null>;
-
-  ledgerSource?(ctx: ProviderContext, source: ProviderSource, priority?: boolean): ProviderLedgerSource | null;
+  ): { descriptor: UsageSourceDescriptor; scanner: UsageSourceScanner };
 
   readSourceCwd?(source: ProviderSource): string | null;
 
@@ -118,19 +118,11 @@ export interface ProviderSourceList {
 }
 
 export interface ProviderUsageScanResult {
-  summaries: Map<string, FileUsageSummary>;
-  ledgerSources: ProviderLedgerSource[];
-  scannedSources: number;
+  usageIndexSources: Array<{
+    descriptor: UsageSourceDescriptor;
+    scanner: UsageSourceScanner;
+  }>;
   partial: boolean;
-  rateLimits?: unknown;
-}
-
-export interface ProviderLedgerSource {
-  provider: ProviderId;
-  sourceId: string;
-  sourcePath?: string;
-  priority: boolean;
-  importIntoSnapshot: (snapshot: UsageLedgerSnapshot, nowMs: number) => Promise<UsageLedgerSnapshot>;
 }
 
 export interface ProviderQuotaSnapshot {
@@ -146,6 +138,23 @@ export interface ProviderQuotaSnapshot {
   windowDisplay?: Record<string, ProviderQuotaWindowDisplay>;
   credits?: Record<string, ProviderCreditBalance>;
   status?: ProviderQuotaStatus;
+  resetCredits?: ProviderResetCreditsData | null;
+}
+
+export interface ProviderResetCredit {
+  idSuffix: string | null;
+  status: string;
+  expiresAtUtc: string | null;
+}
+
+export interface ProviderResetCreditsData {
+  credits: ProviderResetCredit[];
+  availableCount: number;
+  totalEarnedCount: number;
+  checkedAt: number;
+  countOnly: boolean;
+  source: 'api' | 'cache' | 'usage';
+  status: ProviderQuotaStatus;   // public status shape (connected/code/label/detail)
 }
 
 export interface ProviderQuotaWindow {

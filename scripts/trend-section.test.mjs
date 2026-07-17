@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { tCallRegex, enText } from './test-support/i18n.mjs';
 
 test('Trend is a normalized main section between Code Output and Sessions', () => {
   const sections = fs.readFileSync('src/renderer/mainSections.ts', 'utf8');
@@ -48,8 +49,9 @@ test('TrendCard hides tooltip when the pointer leaves the chart', () => {
 
 test('history warmup banner explains changing totals during full-history sync', () => {
   const mainView = fs.readFileSync('src/renderer/views/MainView.tsx', 'utf8');
-  assert.match(mainView, /Trend and totals may keep changing/);
-  assert.match(mainView, /until this banner disappears/);
+  assert.match(mainView, tCallRegex('mainView.warmup.bannerBody'));
+  assert.match(enText('mainView.warmup.bannerBody'), /Trend and totals may keep changing/);
+  assert.match(enText('mainView.warmup.bannerBody'), /until this banner disappears/);
 });
 
 test('TrendCard uses Code Output-style fixed chart coordinates with CSS scaling', () => {
@@ -58,7 +60,7 @@ test('TrendCard uses Code Output-style fixed chart coordinates with CSS scaling'
   assert.match(trendCard, /viewBox=\{`0 0 \$\{CHART\.width\} \$\{CHART\.height\}`\}/);
   assert.match(trendCard, /width=\{CHART\.width\}/);
   assert.match(trendCard, /preserveAspectRatio="none"/);
-  assert.match(trendCard, /style=\{\{ width: '100%', display: 'block', overflow: 'visible' \}\}/);
+  assert.match(trendCard, /style=\{\{ width: '100%', display: 'block', overflow: 'visible', cursor: rows\.length > 0 \? 'pointer' : 'default' \}\}/);
   assert.match(trendCard, /xFor\(index, rows\.length, CHART\.width\)/);
   assert.match(trendCard, /function tooltipLeft\(index: number, count: number, chartWidth: number\): number \{[\s\S]*chartWidth - 6/);
 });
@@ -77,14 +79,89 @@ test('TrendCard labels title totals with the visible grain window', () => {
   assert.match(trendCard, /week: \{ limit: 12, label: '12w' \}/);
   assert.match(trendCard, /month: \{ limit: 12, label: '12m' \}/);
   assert.match(trendCard, /rows\.length === 0/);
-  assert.match(trendCard, /\`\$\{GRAIN_WINDOWS\[grain\]\.label\}: no trend data yet\`/);
-  assert.match(trendCard, /hasUsageSeries \? formatPrimary\(totalPrimary, metric, currency, usdToKrw\) : 'usage pending'/);
-  assert.match(trendCard, /hasOutputSeries \? fmtSignedCompact\(totalOutput\) : 'output pending'/);
-  assert.match(trendCard, /\/ \$\{hasOutputSeries \? fmtSignedCompact\(totalOutput\) : 'output pending'\} net/);
+  assert.match(trendCard, tCallRegex('trendCard.noTrendDataYet'));
+  assert.match(trendCard, /hasUsageSeries \? formatPrimary\(totalPrimary, metric, currency, usdToKrw\) :/);
+  assert.match(trendCard, tCallRegex('trendCard.usagePending'));
+  assert.match(trendCard, /hasOutputSeries \? fmtSignedCompact\(totalOutput\) :/);
+  assert.match(trendCard, tCallRegex('trendCard.outputPending'));
+  assert.match(trendCard, tCallRegex('trendCard.netSuffix'));
   assert.doesNotMatch(trendCard, /total \{formatPrimary\(totalPrimary, metric, currency, usdToKrw\)\}/);
   assert.match(trendCard, /const limit = GRAIN_WINDOWS\[grain\]\.limit/);
 });
 
+test('TrendCard offers work and billing cache views for token trends', () => {
+  const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
+  assert.match(trendCard, /cacheView/);
+  assert.match(trendCard, /'work'/);
+  assert.match(trendCard, /'billing'/);
+  assert.match(trendCard, /useState<CacheView>\('work'\)/);
+  assert.match(trendCard, tCallRegex('trendCard.cacheView.work'));
+  assert.match(trendCard, tCallRegex('trendCard.cacheView.billing'));
+  assert.match(trendCard, /labels=\{cacheViewLabels\}/);
+  assert.match(trendCard, /cacheView === 'work' \? row\.noCacheTokens : row\.tokens/);
+});
+
+test('TrendCard labels request count in English and subordinates cache controls to tokens', () => {
+  const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
+  assert.match(trendCard, tCallRegex('trendCard.requestsCount'));
+  const legacyRequestLabel = String.fromCharCode(35831, 27714);
+  assert.doesNotMatch(enText('trendCard.requestsCount_other'), new RegExp(legacyRequestLabel));
+  assert.match(trendCard, tCallRegex('trendCard.metricLabel'));
+  assert.match(trendCard, tCallRegex('trendCard.cacheLabel'));
+  assert.match(trendCard, tCallRegex('trendCard.rangeLabel'));
+  assert.match(trendCard, /metric === 'tokens' && \(/);
+  assert.match(trendCard, /cacheModifier/);
+  assert.match(trendCard, /CACHE_VIEWS/);
+  assert.match(trendCard, tCallRegex('trendCard.cacheView.work'));
+  assert.match(trendCard, tCallRegex('trendCard.cacheView.billing'));
+});
+
+test('TrendCard wires click selection to the inline breakdown card', () => {
+  const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
+  assert.match(trendCard, /window\.wmt\.getBreakdown/);
+  assert.match(trendCard, /<TrendBreakdownCard/);
+  assert.match(trendCard, /role="button"/);
+  assert.match(trendCard, /handleChartKeyDown/);
+});
+
+test('TrendCard breakdown effect uses stable selected bucket inputs', () => {
+  const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
+  assert.match(trendCard, /const selectedExists = selectedKey !== null && selectedIndex >= 0/);
+  assert.match(trendCard, /}, \[selectedKey, selectedSignature, grain, selectedExists, lastUpdated\]\)/);
+  assert.doesNotMatch(trendCard, /}, \[[^\]]*selectedRow[^\]]*\]\)/);
+});
+
+test('TrendCard clears stale breakdown only when the selected bucket identity changes', () => {
+  const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
+  assert.match(trendCard, /useRef<string \| null>\(null\)/);
+  assert.match(trendCard, /breakdownRequestKeyRef\.current = null/);
+  assert.match(trendCard, /const requestKey = `\$\{grain\}\|\$\{selectedKey\}`/);
+  assert.match(trendCard, /const isNewRequestKey = breakdownRequestKeyRef\.current !== requestKey/);
+  assert.match(trendCard, /if \(isNewRequestKey\) \{\s*breakdownRef\.current = null;\s*setBreakdown\(null\);\s*\}/);
+  assert.match(trendCard, /breakdownRequestKeyRef\.current = requestKey/);
+});
+
+test('TrendCard throttles same-bucket breakdown refreshes without showing loading', () => {
+  const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
+  assert.match(trendCard, /const BREAKDOWN_REFRESH_THROTTLE_MS = 30_000/);
+  assert.match(trendCard, /const breakdownRef = useRef<BucketBreakdown \| null>\(null\)/);
+  assert.match(trendCard, /const breakdownRefreshDueAtRef = useRef\(0\)/);
+  assert.match(trendCard, /const breakdownTrailingTimerRef = useRef/);
+  assert.match(trendCard, /const isNewRequestKey = breakdownRequestKeyRef\.current !== requestKey/);
+  assert.match(trendCard, /if \(!isNewRequestKey && now < breakdownRefreshDueAtRef\.current\) \{/);
+  assert.match(trendCard, /breakdownTrailingTimerRef\.current = window\.setTimeout/);
+  assert.match(trendCard, /refreshBreakdown\(requestKey, selectedKey, breakdownRef\.current === null\)/);
+  assert.match(trendCard, /breakdownRefreshDueAtRef\.current = Date\.now\(\) \+ BREAKDOWN_REFRESH_THROTTLE_MS/);
+  assert.match(trendCard, /const showLoading = isNewRequestKey \|\| breakdown === null/);
+});
+
+test('TrendCard receives state freshness so breakdown-only UsageIndex changes can refresh', () => {
+  const mainView = fs.readFileSync('src/renderer/views/MainView.tsx', 'utf8');
+  const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
+  assert.match(mainView, /<TrendCard[^>]*lastUpdated=\{state\.lastUpdated\}/);
+  assert.match(trendCard, /lastUpdated: number/);
+  assert.match(trendCard, /}, \[selectedKey, selectedSignature, grain, selectedExists, lastUpdated\]\)/);
+});
 test('TrendCard does not draw missing usage or output buckets as zero-value trend lines', () => {
   const trendCard = fs.readFileSync('src/renderer/components/TrendCard.tsx', 'utf8');
   assert.match(trendCard, /const primaryValues = rows\.filter\(row => row\.hasUsage\)\.map/);
@@ -94,6 +171,6 @@ test('TrendCard does not draw missing usage or output buckets as zero-value tren
   assert.match(trendCard, /function pathsForRows\(/);
   assert.doesNotMatch(trendCard, /pathFor\(points\.map\(point => \(\{ x: point\.x, y: point\.primaryY \}\)\)\)/);
   assert.doesNotMatch(trendCard, /pathFor\(points\.map\(point => \(\{ x: point\.x, y: point\.outputY \}\)\)\)/);
-  assert.match(trendCard, /No trend data yet/);
+  assert.match(trendCard, tCallRegex('trendCard.noTrendDataYetSvg'));
   assert.doesNotMatch(trendCard, /Syncing history/);
 });

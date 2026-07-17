@@ -6,6 +6,8 @@ import { AppState, DebugMemSnapshot } from './stateManager';
 import { getHistory, clearHistory } from './notificationHistory';
 import { isDebugInstrumentationEnabled } from './debugInstrumentation';
 import { syncLoginItemSettings } from './loginItems';
+import { isBreakdownGrain, isBucketKeyForGrain, type BreakdownGrain } from '../shared/bucketKey';
+import type { BucketBreakdown } from '../shared/breakdownTypes';
 import {
   disableIntegration,
   getIntegrationStatus,
@@ -23,6 +25,7 @@ export interface CompactWidgetBounds {
 }
 
 export type QuotaDisplayMode = 'rich' | 'simple' | 'none';
+export type LanguagePreference = 'system' | 'en' | 'ja';
 
 export interface AppSettings {
   enabledProviders: ProviderId[];
@@ -35,6 +38,7 @@ export interface AppSettings {
   usdToKrw: number;
   globalHotkey: string;
   enableAlerts: boolean;
+  language: LanguagePreference;
   trayDisplay: 'none' | 'h5pct' | 'tokens' | 'cost';
   mainSectionOrder: string[];
   hiddenMainSections: string[];
@@ -118,6 +122,10 @@ function isQuotaDisplayMode(value: unknown): value is QuotaDisplayMode {
   return value === 'rich' || value === 'simple' || value === 'none';
 }
 
+function isLanguagePreference(value: unknown): value is LanguagePreference {
+  return value === 'system' || value === 'en' || value === 'ja';
+}
+
 function isProviderId(value: unknown): value is ProviderId {
   return typeof value === 'string' && (PROVIDER_IDS as readonly string[]).includes(value);
 }
@@ -185,6 +193,7 @@ function normalizedSettingsPartial(partial: unknown): Partial<AppSettings> {
   if (usdToKrw != null) next.usdToKrw = usdToKrw;
   if (typeof record.globalHotkey === 'string') next.globalHotkey = record.globalHotkey.slice(0, 80);
   if (typeof record.enableAlerts === 'boolean') next.enableAlerts = record.enableAlerts;
+  if (isLanguagePreference(record.language)) next.language = record.language;
   if (record.trayDisplay === 'none' || record.trayDisplay === 'h5pct' || record.trayDisplay === 'tokens' || record.trayDisplay === 'cost') next.trayDisplay = record.trayDisplay;
   const mainSectionOrder = normalizeMainSectionOrder(record.mainSectionOrder);
   if (mainSectionOrder) next.mainSectionOrder = mainSectionOrder;
@@ -241,6 +250,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   usdToKrw: 1380,
   globalHotkey: 'CommandOrControl+Shift+D',
   enableAlerts: true,
+  language: 'system',
   trayDisplay: 'h5pct',
   mainSectionOrder: DEFAULT_MAIN_SECTION_ORDER,
   hiddenMainSections: [],
@@ -255,6 +265,26 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'auto',
 };
 
+type IpcMainHandle = {
+  handle: (channel: string, listener: (event: unknown, ...args: any[]) => unknown) => void;
+};
+
+export interface RegisterIpcHandlersOptions {
+  store: Store<AppSettings>;
+  getState: () => AppState;
+  forceRefresh: () => Promise<void>;
+  applySettingsChange: () => void;
+  resetUsageIndex?: () => Promise<void>;
+  getDebugMemSnapshot?: () => Promise<DebugMemSnapshot>;
+  windowActions?: {
+    openDashboard: () => void;
+    openSettings: () => void;
+    hideCompactWidget: () => void;
+  };
+  getBreakdown?: (grain: BreakdownGrain, bucketKey: string) => Promise<BucketBreakdown>;
+  ipcMain?: IpcMainHandle;
+}
+
 function claudeSettingsPath(): string {
   return path.join(os.homedir(), '.claude', 'settings.json');
 }
@@ -264,29 +294,37 @@ function bridgeScriptPath(): string {
   return path.join(app.getAppPath(), 'dist', 'bridge', 'bridge.js');
 }
 
-export function registerIpcHandlers(
-  store: Store<AppSettings>,
-  getState: () => AppState,
-  forceRefresh: () => Promise<void>,
-  applySettingsChange: () => void,
-  rebuildUsageLedger?: () => Promise<void>,
-  getDebugMemSnapshot?: () => Promise<DebugMemSnapshot>,
-  windowActions?: {
-    openDashboard: () => void;
-    openSettings: () => void;
-    hideCompactWidget: () => void;
-  },
-) {
-  ipcMain.handle('state:get', () => getState());
-  ipcMain.handle('state:refresh', async () => { await forceRefresh(); return getState(); });
-  ipcMain.handle('ledger:rebuild', async () => {
-    if (rebuildUsageLedger) await rebuildUsageLedger();
+export function registerIpcHandlers(options: RegisterIpcHandlersOptions) {
+  const {
+    store,
+    getState,
+    forceRefresh,
+    applySettingsChange,
+    resetUsageIndex,
+    getDebugMemSnapshot,
+    windowActions,
+    getBreakdown,
+    ipcMain: ipc = ipcMain,
+  } = options;
+
+  ipc.handle('state:get', () => getState());
+  ipc.handle('state:refresh', async () => { await forceRefresh(); return getState(); });
+  ipc.handle('usage-index:reset', async () => {
+    if (!resetUsageIndex) throw new Error('usage-index:reset not wired');
+    await resetUsageIndex();
     return getState();
   });
+  ipc.handle('breakdown:get', async (_e, grain: unknown, bucketKey: unknown) => {
+    if (!getBreakdown) throw new Error('breakdown:get not wired');
+    if (!isBreakdownGrain(grain) || !isBucketKeyForGrain(grain, bucketKey)) {
+      throw new Error('invalid breakdown request');
+    }
+    return getBreakdown(grain, bucketKey);
+  });
 
-  ipcMain.handle('settings:get', () => normalizeSettings(store.store));
+  ipc.handle('settings:get', () => normalizeSettings(store.store));
 
-  ipcMain.handle('settings:set', (_e, partial: unknown) => {
+  ipc.handle('settings:set', (_e, partial: unknown) => {
     const sanitized = normalizedSettingsPartial(partial);
     for (const [k, v] of Object.entries(sanitized)) {
       store.set(k as keyof AppSettings, v as AppSettings[keyof AppSettings]);
@@ -298,13 +336,13 @@ export function registerIpcHandlers(
     return normalizeSettings(store.store);
   });
 
-  ipcMain.handle('notifications:get', () => getHistory());
-  ipcMain.handle('notifications:clear', () => { clearHistory(); return []; });
-  ipcMain.handle('window:open-dashboard', () => windowActions?.openDashboard());
-  ipcMain.handle('window:open-settings', () => windowActions?.openSettings());
-  ipcMain.handle('window:hide-compact-widget', () => windowActions?.hideCompactWidget());
-  ipcMain.handle('debug-instrumentation-enabled', () => isDebugInstrumentationEnabled());
-  ipcMain.handle('debug-mem-snapshot', async () => {
+  ipc.handle('notifications:get', () => getHistory());
+  ipc.handle('notifications:clear', () => { clearHistory(); return []; });
+  ipc.handle('window:open-dashboard', () => windowActions?.openDashboard());
+  ipc.handle('window:open-settings', () => windowActions?.openSettings());
+  ipc.handle('window:hide-compact-widget', () => windowActions?.hideCompactWidget());
+  ipc.handle('debug-instrumentation-enabled', () => isDebugInstrumentationEnabled());
+  ipc.handle('debug-mem-snapshot', async () => {
     if (!isDebugInstrumentationEnabled()) return null;
     if (!getDebugMemSnapshot) return null;
     return getDebugMemSnapshot();
@@ -314,9 +352,9 @@ export function registerIpcHandlers(
   const handleIntegrationStatus = () => getIntegrationStatus(claudeSettingsPath(), bridgeScriptPath());
   const handleIntegrationDisable = () => disableIntegration(claudeSettingsPath(), bridgeScriptPath());
 
-  ipcMain.handle('integration-setup', handleIntegrationSetup);
-  ipcMain.handle('integration-status', handleIntegrationStatus);
-  ipcMain.handle('integration-disable', handleIntegrationDisable);
-  ipcMain.handle('integration:setup', handleIntegrationSetup);
-  ipcMain.handle('integration:status', handleIntegrationStatus);
+  ipc.handle('integration-setup', handleIntegrationSetup);
+  ipc.handle('integration-status', handleIntegrationStatus);
+  ipc.handle('integration-disable', handleIntegrationDisable);
+  ipc.handle('integration:setup', handleIntegrationSetup);
+  ipc.handle('integration:status', handleIntegrationStatus);
 }
