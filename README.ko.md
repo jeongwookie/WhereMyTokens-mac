@@ -55,6 +55,7 @@ WhereMyTokens는 macOS 메뉴 막대에 상주하면서 Claude Code, Codex, Anti
 
 | 버전 | 날짜 | 주요 변경 |
 |------|------|-----------|
+| **mac-v1.1.1** | 2026-07-19 | Codex가 일시적으로 생략한 quota를 Unlimited로 표시하고, 범위 제한 typed projection으로 UsageIndex 메모리 사용을 줄였으며, compact widget 버튼과 숨김 상태 저장을 안정화. |
 | **mac-v1.1.0** | 2026-07-17 | Windows v1.22의 UsageIndex/provider 파이프라인, reset credit, trend breakdown, System/English/日本語 UI를 동기화하면서 macOS 메뉴 막대, Keychain, 로그인 항목, 데이터 경로를 유지. |
 | **mac-v1.0.0** | 2026-06-17 | 첫 macOS 릴리스 트랙. 메뉴 막대 앱 shell, DMG/ZIP 패키징, macOS 데이터 경로, Claude/Codex/Antigravity 사용량 추적, Claude Desktop credential discovery 포함. |
 
