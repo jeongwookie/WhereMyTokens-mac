@@ -55,7 +55,7 @@ WhereMyTokens는 macOS 메뉴 막대에 상주하면서 Claude Code, Codex, Anti
 
 | 버전 | 날짜 | 주요 변경 |
 |------|------|-----------|
-| **mac-v1.1.1** | 2026-07-19 | Codex가 일시적으로 생략한 quota를 Unlimited로 표시하고, 범위 제한 typed projection으로 UsageIndex 메모리 사용을 줄였으며, compact widget 버튼과 숨김 상태 저장을 안정화. |
+| **[mac-v1.1.1](https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.1.1)** | 2026-07-19 | Codex가 일시적으로 생략한 quota를 Unlimited로 표시하고, 범위 제한 typed projection으로 UsageIndex 메모리 사용을 줄였으며, compact widget 버튼과 숨김 상태 저장을 안정화. |
 | **mac-v1.1.0** | 2026-07-17 | Windows v1.22의 UsageIndex/provider 파이프라인, reset credit, trend breakdown, System/English/日本語 UI를 동기화하면서 macOS 메뉴 막대, Keychain, 로그인 항목, 데이터 경로를 유지. |
 | **mac-v1.0.0** | 2026-06-17 | 첫 macOS 릴리스 트랙. 메뉴 막대 앱 shell, DMG/ZIP 패키징, macOS 데이터 경로, Claude/Codex/Antigravity 사용량 추적, Claude Desktop credential discovery 포함. |
 
@@ -71,7 +71,7 @@ WhereMyTokens는 macOS 메뉴 막대에 상주하면서 Claude Code, Codex, Anti
 4. DMG를 eject합니다.
 5. `/Applications`에서 `WhereMyTokens`를 실행합니다.
 
-현재 로컬 빌드는 ad-hoc signing은 되었지만 Apple notarization은 아직 없습니다. Developer ID 인증서와 notarization pipeline을 붙이기 전까지는 첫 실행 때 Gatekeeper가 "확인되지 않은 개발자" 경고를 띄울 수 있습니다. 내부 테스트에서는 앱을 우클릭한 뒤 **열기**를 선택하거나 **시스템 설정 -> 개인정보 보호 및 보안 -> 그래도 열기**를 사용할 수 있습니다. 공개 배포 전에는 Developer ID signing, notarization, stapling이 필요합니다.
+현재 빌드는 Apple Development 인증서와 hardened runtime으로 서명되었지만 Developer ID notarization은 아직 없습니다. 따라서 첫 실행 때 Gatekeeper가 앱을 차단하거나 경고를 띄울 수 있습니다. 앱을 우클릭한 뒤 **열기**를 선택하거나 **시스템 설정 -> 개인정보 보호 및 보안 -> 그래도 열기**를 사용할 수 있습니다.
 
 ### 방법 2: ZIP 앱 아카이브
 

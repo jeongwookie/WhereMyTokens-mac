@@ -40,7 +40,7 @@
 
 | 版本 | 日期 | 主要变更 |
 |------|------|----------|
-| **mac-v1.1.1** | 2026-07-19 | 将 Codex 暂时省略的 quota 显示为 Unlimited，通过限定范围的 typed projection 降低 UsageIndex 内存压力，并修复 compact widget 按钮与隐藏状态持久化。 |
+| **[mac-v1.1.1](https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.1.1)** | 2026-07-19 | 将 Codex 暂时省略的 quota 显示为 Unlimited，通过限定范围的 typed projection 降低 UsageIndex 内存压力，并修复 compact widget 按钮与隐藏状态持久化。 |
 | **mac-v1.1.0** | 2026-07-17 | 同步 Windows v1.22 的 UsageIndex/provider pipeline、reset credits、trend breakdown 与 System/English/日本語 UI，同时保留 macOS 菜单栏、Keychain、登录项和数据路径。 |
 | **mac-v1.0.0** | 2026-06-17 | 首个 macOS release track：菜单栏应用、DMG/ZIP、macOS 数据路径，以及 Claude/Codex/Antigravity tracking。 |
 
@@ -53,7 +53,7 @@
 3. 将 `WhereMyTokens.app` 拖到 `/Applications`。
 4. 从 `/Applications` 启动应用。
 
-当前本地构建使用 ad-hoc signing，但还没有 Apple notarization。内部测试时可以右键应用并选择 **Open**，或使用 **System Settings -> Privacy & Security -> Open Anyway**。公开发布前需要 Developer ID signing、notarization 和 stapling。
+当前构建已使用 Apple Development 证书和 hardened runtime 签名，但尚未完成 Developer ID notarization。因此，首次启动时 Gatekeeper 可能会阻止或警告。可以右键应用并选择 **Open**，或使用 **System Settings -> Privacy & Security -> Open Anyway**。
 
 ### ZIP
 
