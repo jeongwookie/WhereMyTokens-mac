@@ -54,7 +54,7 @@ pkill -f "Electron .*WhereMyTokens-mac" || true
 ## GitHub Release 생성
 
 ```bash
-VERSION=1.1.0
+VERSION=1.1.1
 TAG="mac-v${VERSION}"
 
 gh release create "$TAG" \
@@ -87,5 +87,6 @@ gh release create "$TAG" \
 
 | 버전 | 날짜 | 주요 변경 |
 |------|------|-----------|
+| mac-v1.1.1 | 2026-07-19 | Codex Unlimited/unreported quota 표시, UsageIndex 동적 조회 범위와 typed projection 메모리 최적화, compact widget 클릭 및 숨김 상태 저장 안정화. |
 | mac-v1.1.0 | 2026-07-17 | Windows v1.22 기능 동기화. UsageIndex/provider scanner, Codex reset credits, trend breakdown, System/English/日本語 UI, macOS 메뉴 막대 UX, 레거시 ledger 보존 및 패키지 회귀 검증 포함. |
 | mac-v1.0.0 | 2026-06-17 | macOS 메뉴 막대 앱으로 첫 독립 버전 트랙 시작. DMG/ZIP 패키징, macOS 데이터 경로, Claude/Codex/Antigravity 사용량 추적, Claude Desktop credential discovery, 메뉴 막대 팝오버와 설치 문서 정리. |

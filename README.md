@@ -12,7 +12,7 @@
   <img alt="macOS menu bar" src="https://img.shields.io/badge/macOS-menu_bar-000000?style=for-the-badge">
   <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple_Silicon-arm64-2563eb?style=for-the-badge">
   <img alt="Local only" src="https://img.shields.io/badge/Local_only-no_cloud_sync-0f766e?style=for-the-badge">
-  <a href="https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.1.0"><img alt="Release mac-v1.1.0" src="https://img.shields.io/badge/release-mac--v1.1.0-2563eb?style=for-the-badge"></a>
+  <a href="https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.1.1"><img alt="Release mac-v1.1.1" src="https://img.shields.io/badge/release-mac--v1.1.1-2563eb?style=for-the-badge"></a>
 </p>
 
 <p align="center">
@@ -52,13 +52,13 @@ WhereMyTokens for macOS is a local-first menu bar app for monitoring AI coding u
 
 | Platform | Download | Best For |
 |----------|----------|----------|
-| macOS Apple Silicon | **[DMG Installer](https://github.com/jeongwookie/WhereMyTokens-mac/releases/download/mac-v1.1.0/WhereMyTokens-1.1.0-mac-arm64.dmg)** | Drag-to-Applications install |
-| macOS Apple Silicon | **[ZIP App Archive](https://github.com/jeongwookie/WhereMyTokens-mac/releases/download/mac-v1.1.0/WhereMyTokens-1.1.0-arm64-mac.zip)** | Simple archive install |
-| Windows 10/11 | **[Windows Edition](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.22.0)** | Tray app with installer and portable ZIP |
+| macOS Apple Silicon | **[DMG Installer](https://github.com/jeongwookie/WhereMyTokens-mac/releases/download/mac-v1.1.1/WhereMyTokens-1.1.1-mac-arm64.dmg)** | Drag-to-Applications install |
+| macOS Apple Silicon | **[ZIP App Archive](https://github.com/jeongwookie/WhereMyTokens-mac/releases/download/mac-v1.1.1/WhereMyTokens-1.1.1-arm64-mac.zip)** | Simple archive install |
+| Windows 10/11 | **[Windows Edition](https://github.com/jeongwookie/WhereMyTokens/releases/tag/v1.22.3)** | Tray app with installer and portable ZIP |
 
 By downloading or installing, you agree to the [End-User License Agreement](EULA.txt).
 
-The current macOS build is ad-hoc signed but not Apple notarized. Until Developer ID signing and notarization are added, macOS may show an unidentified-developer warning on first launch. For testing, right-click the app and choose **Open**, or use **System Settings -> Privacy & Security -> Open Anyway**.
+The current macOS build is signed with an Apple Development identity and hardened runtime, but it is not Developer ID notarized. macOS may therefore block or warn on first launch. Right-click the app and choose **Open**, or use **System Settings -> Privacy & Security -> Open Anyway**.
 
 ## First Run
 
@@ -78,6 +78,7 @@ Default local data location:
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **[mac-v1.1.1](https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.1.1)** | Jul 19 | Show temporarily omitted Codex quota windows as Unlimited, reduce UsageIndex memory pressure with bounded typed projections, and make compact widget controls reliable and persistent |
 | **[mac-v1.1.0](https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.1.0)** | Jul 17 | Sync the Windows v1.22 UsageIndex/provider pipeline, reset credits, trend breakdowns, and System/English/Japanese UI while retaining the native macOS menu bar, Keychain, login item, and data paths |
 | **[v1.0.0](https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.0.0)** | Jun 17 | Start the independent macOS release track with menu bar packaging, DMG/ZIP artifacts, macOS data paths, Claude/Codex/Antigravity usage tracking, and Claude Desktop credential discovery |
 

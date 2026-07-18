@@ -40,6 +40,7 @@
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **[mac-v1.1.1](https://github.com/jeongwookie/WhereMyTokens-mac/releases/tag/mac-v1.1.1)** | 19 jul 2026 | Muestra como Unlimited las cuotas que Codex omite temporalmente, reduce la memoria de UsageIndex con proyecciones tipadas acotadas y corrige los controles y la persistencia del widget compacto. |
 | **mac-v1.1.0** | 17 jul 2026 | Sincroniza UsageIndex/providers, reset credits, trend breakdown y la UI System/English/日本語 de Windows v1.22, conservando barra de menús, Keychain, login item y rutas de macOS. |
 | **mac-v1.0.0** | 17 jun 2026 | Primer track de macOS: barra de menús, DMG/ZIP, rutas de datos de macOS y tracking de Claude/Codex/Antigravity. |
 
@@ -52,7 +53,7 @@
 3. Arrastra `WhereMyTokens.app` a `/Applications`.
 4. Lanza la app desde `/Applications`.
 
-El build local actual usa ad-hoc signing, pero todavía no tiene Apple notarization. Para pruebas internas, haz clic derecho en la app y elige **Open**, o usa **System Settings -> Privacy & Security -> Open Anyway**. Para distribución pública se necesita Developer ID signing, notarization y stapling.
+El build actual está firmado con un certificado Apple Development y hardened runtime, pero todavía no tiene Developer ID notarization. Por eso Gatekeeper puede bloquearlo o mostrar una advertencia en el primer inicio. Haz clic derecho en la app y elige **Open**, o usa **System Settings -> Privacy & Security -> Open Anyway**.
 
 ### ZIP
 

@@ -465,7 +465,10 @@ function syncCompactWidget() {
 }
 
 function hideCompactWidget() {
+  store.set('compactWidgetEnabled', false);
   if (widgetWindow && !widgetWindow.isDestroyed()) widgetWindow.hide();
+  stateManager?.applySettingsChange();
+  applyWindowSettings();
   syncUiVisibility();
   rebuildTrayMenu();
 }
