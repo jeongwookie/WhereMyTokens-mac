@@ -55,6 +55,20 @@ test('macOS popover translation namespace has English and Japanese parity', () =
   assert.equal(ja.macMenuBarPopover.status.localShort, 'ローカル');
 });
 
+test('macOS popover presents unlimited and unreported quota windows as ready data', () => {
+  assert.match(source, /row\.quota\.limitState === 'unlimited'/);
+  assert.match(source, /row\.quota\.limitState === 'unreported'/);
+  assert.match(source, /selected\.limitState === 'unlimited'/);
+  assert.match(source, /noCapState \? '100%'/);
+
+  assert.equal(en.tokenStatsCard.unlimited, 'Unlimited');
+  assert.equal(en.tokenStatsCard.unreported, 'Unlimited');
+  assert.equal(ja.tokenStatsCard.unlimited, 'Unlimited');
+  assert.equal(ja.tokenStatsCard.unreported, 'Unlimited');
+  assert.equal(en.macMenuBarPopover.status.unlimited.includes('{{title}}'), true);
+  assert.equal(ja.macMenuBarPopover.status.unreported.includes('{{label}}'), true);
+});
+
 test('macOS popover keeps its compact menu-bar layout without taskbar concepts', () => {
   assert.match(source, /gridTemplateRows: 'auto 1fr auto'/);
   assert.match(source, /\.\.\.noDrag,\s*minHeight: 0,\s*overflowY: 'auto'/s);

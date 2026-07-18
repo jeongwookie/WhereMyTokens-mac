@@ -26,6 +26,7 @@ interface QuotaRowViewModel {
   label: string;
   quotaPct: number;
   resetMs: number | null;
+  limitState?: 'unlimited' | 'unreported';
   visualKind: QuotaDisplayRowViewModel['visualKind'];
   costUSD: number;
   tokens: number;
@@ -72,7 +73,9 @@ function buildQuotaRows(state: AppState, t: TFunction): QuotaRowViewModel[] {
 
   return widgetGroups.flatMap(group => group.rows.map(row => {
     const quotaPct = clampPct(row.quotaPct);
-    const hasQuotaSignal = row.quota.pct > 0
+    const hasQuotaSignal = row.quota.limitState === 'unlimited'
+      || row.quota.limitState === 'unreported'
+      || row.quota.pct > 0
       || row.quota.resetMs != null
       || !!row.quota.resetLabel
       || !!row.quota.source;
@@ -83,6 +86,7 @@ function buildQuotaRows(state: AppState, t: TFunction): QuotaRowViewModel[] {
       label: row.label,
       quotaPct,
       resetMs: row.resetMs,
+      limitState: row.quota.limitState,
       visualKind: row.visualKind,
       costUSD: row.hideCost ? 0 : row.stats.costUSD,
       tokens: row.stats.totalTokens,
@@ -129,6 +133,8 @@ function primaryQuota(rows: QuotaRowViewModel[]): QuotaRowViewModel | null {
 
 function statusText(row: QuotaRowViewModel | null, t: TFunction): string {
   if (!row) return t('macMenuBarPopover.status.waitingForQuota');
+  if (row.limitState === 'unlimited') return t('macMenuBarPopover.status.unlimited', { title: row.title, label: row.label });
+  if (row.limitState === 'unreported') return t('macMenuBarPopover.status.unreported', { title: row.title, label: row.label });
   if (row.pending) return t('macMenuBarPopover.status.syncing', { title: row.title, label: row.label });
   if (row.waiting) return t('macMenuBarPopover.status.waiting', { title: row.title, label: row.label });
   if (!row.hasQuotaSignal && row.tokens > 0) {
@@ -145,13 +151,17 @@ function topLine(rows: QuotaRowViewModel[], currency: string, usdToKrw: number, 
   const scope = h5Rows.length > 0 ? h5Rows : rows.slice(0, 2);
   if (scope.length === 0) return t('macMenuBarPopover.status.fiveHourLoading');
   const parts = scope.slice(0, 3).map(row => {
-    const value = row.pending
-      ? t('compactWidgetView.status.scanning')
-      : row.hasQuotaSignal
-        ? formatPct(row.quotaPct)
-        : row.tokens > 0
-          ? fmtTokens(row.tokens)
-          : '--';
+    const value = row.limitState === 'unlimited'
+      ? t('tokenStatsCard.unlimited')
+      : row.limitState === 'unreported'
+        ? t('tokenStatsCard.unreported')
+        : row.pending
+          ? t('compactWidgetView.status.scanning')
+          : row.hasQuotaSignal
+            ? formatPct(row.quotaPct)
+            : row.tokens > 0
+              ? fmtTokens(row.tokens)
+              : '--';
     return `${providerDisplayName(row.provider)} ${row.label} ${value}`;
   });
   const cost = scope.reduce((sum, row) => sum + row.costUSD, 0);
@@ -240,17 +250,28 @@ function PeriodToggle({ period, onPeriod }: { period: Period; onPeriod: (period:
 function QuotaRow({ row, currency, usdToKrw }: { row: QuotaRowViewModel; currency: string; usdToKrw: number }) {
   const C = useTheme();
   const { t } = useTranslation();
-  const color = row.pending || row.waiting ? C.textMuted : quotaPctBarColor(row.quotaPct, C);
-  const value = row.pending
-    ? t('compactWidgetView.status.scanning')
-    : row.hasQuotaSignal
-      ? formatPct(row.quotaPct)
-      : row.tokens > 0
-        ? fmtTokens(row.tokens)
-        : t('tokenStatsCard.waiting');
-  const reset = row.visualKind === 'percentOnly' ? '' : formatReset(row.resetMs);
+  const isUnlimited = row.limitState === 'unlimited';
+  const isUnreported = row.limitState === 'unreported';
+  const noCapState = isUnlimited || isUnreported;
+  const color = noCapState ? C.accent : row.pending || row.waiting ? C.textMuted : quotaPctBarColor(row.quotaPct, C);
+  const value = noCapState
+    ? t(isUnlimited ? 'tokenStatsCard.unlimited' : 'tokenStatsCard.unreported')
+    : row.pending
+      ? t('compactWidgetView.status.scanning')
+      : row.hasQuotaSignal
+        ? formatPct(row.quotaPct)
+        : row.tokens > 0
+          ? fmtTokens(row.tokens)
+          : t('tokenStatsCard.waiting');
+  const reset = noCapState
+    ? t(isUnlimited ? 'tokenStatsCard.unlimitedReset' : 'tokenStatsCard.unreportedReset')
+    : row.visualKind === 'percentOnly' ? '' : formatReset(row.resetMs);
+  const title = noCapState
+    ? t(isUnlimited ? 'tokenStatsCard.unlimitedTooltip' : 'tokenStatsCard.unreportedTooltip')
+    : undefined;
   return (
     <div
+      title={title}
       style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 116px) minmax(0, 1fr) auto',
@@ -268,7 +289,7 @@ function QuotaRow({ row, currency, usdToKrw }: { row: QuotaRowViewModel; currenc
         <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 700 }}>{row.label}{reset ? ` / ${reset}` : ''}</div>
       </div>
       <div style={{ height: 7, borderRadius: 999, background: C.bgCard, overflow: 'hidden', border: `1px solid ${C.borderSub}` }}>
-        <div style={{ width: row.pending || row.waiting || !row.hasQuotaSignal ? '8%' : `${row.quotaPct}%`, height: '100%', borderRadius: 999, background: color }} />
+        <div style={{ width: noCapState ? '100%' : row.pending || row.waiting || !row.hasQuotaSignal ? '8%' : `${row.quotaPct}%`, height: '100%', borderRadius: 999, background: color, opacity: noCapState ? 0.62 : undefined }} />
       </div>
       <div style={{ minWidth: 76, textAlign: 'right' }}>
         <div style={{ color, fontSize: 15, fontWeight: 900 }}>{value}</div>
@@ -406,7 +427,7 @@ export default function MacMenuBarPopoverView({
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 12, alignItems: 'center' }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: C.textMuted, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8 }}>{t('macMenuBarPopover.fiveHourStatus')}</div>
-                <div style={{ marginTop: 4, color: C.text, fontSize: 22, fontWeight: 900 }}>{selected && !selected.waiting && !selected.pending ? (selected.hasQuotaSignal ? formatPct(selected.quotaPct) : selected.tokens > 0 ? fmtTokens(selected.tokens) : '--') : '--'}</div>
+                <div style={{ marginTop: 4, color: C.text, fontSize: 22, fontWeight: 900 }}>{selected ? (selected.limitState === 'unlimited' ? t('tokenStatsCard.unlimited') : selected.limitState === 'unreported' ? t('tokenStatsCard.unreported') : !selected.waiting && !selected.pending ? (selected.hasQuotaSignal ? formatPct(selected.quotaPct) : selected.tokens > 0 ? fmtTokens(selected.tokens) : '--') : '--') : '--'}</div>
                 <div title={statusText(selected, t)} style={{ marginTop: 2, color: C.textDim, fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {statusText(selected, t)}
                 </div>
